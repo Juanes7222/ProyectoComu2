@@ -1,0 +1,88 @@
+\section{Descripción de Requerimientos}
+
+\subsection{Requerimientos de Cantidad de Áreas y Redes}
+
+La topología de la empresa comprende tres segmentos LAN independientes,
+cada uno asociado a un área funcional de la organización. La cantidad de
+usuarios finales por área, antes de aplicar el factor de crecimiento, es
+de 850 en LAN 1, 600 en LAN 2 y 200 en LAN 3. Aplicando un crecimiento
+previsto del 10\%, las redes deben dimensionarse para albergar 935, 660 y
+220 hosts respectivamente, sin contar los dispositivos de telecomunicaciones
+ni los servidores de servicios, que requieren subredes dedicadas.
+
+Adicionalmente, la topología contempla una subred de interconexión entre
+routers para cada enlace WAN entre sedes, así como una subred dedicada para
+los servidores de servicios. En total, el diseño debe prever al menos seis
+subredes: tres para usuarios finales, una para servidores, y las necesarias
+para los enlaces punto a punto entre dispositivos de enrutamiento.
+
+\subsection{Requerimientos de Direccionamiento}
+
+El espacio de direcciones asignado al Grupo 1 es \texttt{172.16.192.0/19}
+para IPv4 y el prefijo \texttt{2001:dbe:bef9::/48} para IPv6. A partir de
+estos bloques se debe derivar un esquema de direccionamiento jerárquico que
+satisfaga las necesidades de cada segmento de red, considerando los hosts de
+usuario final, los dispositivos de telecomunicaciones activos en cada área y
+los servidores de servicios.
+
+La estrategia de asignación de direcciones debe definirse de forma diferenciada
+según el tipo de dispositivo: servidores, dispositivos de telecomunicaciones y
+equipos de usuario final, justificando en cada caso el mecanismo seleccionado
+en función de los requerimientos operativos y de administración de la red.
+
+\subsection{Requerimientos de Servicios}
+
+La red debe garantizar la disponibilidad de tres servicios de aplicación
+accesibles desde todos los segmentos de la topología a través del enrutador.
+El primer servicio es un servidor web que expone contenido HTTP a los usuarios
+de todas las áreas. El segundo es un servidor de correo electrónico que permite
+el envío y la recepción de mensajes entre los usuarios de la organización. El
+tercero es un servicio de mensajería instantánea implementado sobre sockets TCP,
+con soporte para salas de chat, visualización de usuarios conectados mediante el
+comando \texttt{/list} e historial local de mensajes exportable a archivo de texto.
+
+Los tres servicios se alojan en un servidor Linux con dirección estática dentro
+de la subred de servidores, y deben ser accesibles tanto por IPv4 como por IPv6,
+en coherencia con el requisito de doble stack definido para toda la topología.
+
+\subsection{Requerimientos de Seguridad}
+
+\subsubsection{Seguridad de Acceso}
+
+Se debe prevenir el acceso no autorizado a los dispositivos de telecomunicaciones
+mediante la configuración de credenciales de acceso tanto en la consola local como
+en las líneas de terminal virtual. Las contraseñas deben almacenarse de forma
+cifrada en los archivos de configuración de los equipos, evitando que queden
+expuestas en texto plano dentro de los respaldos de configuración.
+
+En los servidores Linux, el acceso al sistema operativo debe restringirse mediante
+reglas de firewall que limiten los puertos expuestos a los estrictamente necesarios
+para la operación de cada servicio. Cualquier puerto no requerido por los servicios
+web, de correo o de chat debe permanecer cerrado por defecto.
+
+\subsubsection{Seguridad para Configuración Remota}
+
+La administración remota de los dispositivos de telecomunicaciones debe realizarse
+exclusivamente a través de SSH versión 2, deshabilitando el protocolo Telnet en
+todas las líneas VTY. Esto garantiza que las sesiones de configuración remota
+viajen cifradas a través de la red, protegiéndolas frente a ataques de
+interceptación pasiva dentro de los mismos segmentos LAN.
+
+Para los servidores Linux, la configuración remota se realizará también mediante
+SSH, preferiblemente con autenticación por clave pública en lugar de contraseña,
+reduciendo la superficie de ataque frente a intentos de fuerza bruta.
+
+\subsection{Requerimientos de Enrutamiento}
+
+La topología comprende múltiples sedes que deben mantenerse en comunicación
+permanente, por lo que se requiere implementar un protocolo de enrutamiento
+dinámico que propague automáticamente las rutas hacia todos los segmentos de
+la red. El protocolo seleccionado debe operar tanto sobre IPv4 como sobre IPv6,
+garantizando conectividad de extremo a extremo para ambas familias de direcciones
+en toda la topología.
+
+El diseño del enrutamiento debe contemplar la convergencia de la red ante posibles
+cambios en la topología, así como la correcta redistribución de las rutas hacia
+las subredes de servidores y enlaces punto a punto, de modo que cualquier
+dispositivo final pueda alcanzar cualquier servicio independientemente del área
+en la que se encuentre.
