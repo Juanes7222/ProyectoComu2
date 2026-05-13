@@ -1,0 +1,104 @@
+\section{Descripción de las Decisiones de Diseño}
+
+\subsection{Esquema de Direccionamiento}
+
+El bloque \texttt{172.16.192.0/19} ofrece 8.190 direcciones utilizables, lo
+que permite derivar subredes de tamaño variable mediante VLSM para ajustarse
+con precisión a las necesidades de cada segmento. Se optó por este enfoque
+en lugar de un esquema de subredes de tamaño fijo, dado que las diferencias
+de escala entre las áreas son significativas: LAN 1 requiere más de 900 hosts,
+mientras que los enlaces punto a punto entre routers solo necesitan dos
+direcciones. Emplear subredes de tamaño uniforme desperdiciaría una fracción
+considerable del espacio de direcciones disponible.
+
+Para IPv6, el prefijo \texttt{2001:dbe:bef9::/48} permite asignar subredes
+\texttt{/64} a cada segmento de la topología sin restricción práctica de
+cantidad. Se adoptó el prefijo \texttt{/64} de forma uniforme para todos los
+segmentos, dado que es el tamaño mínimo requerido por SLAAC para la
+autoconfiguración de direcciones en los hosts de usuario final, y simplifica
+la gestión del plan de direccionamiento al eliminar la necesidad de VLSM en
+la familia IPv6.
+
+\subsection{Estrategia de Asignación de Direcciones}
+
+Para los dispositivos de telecomunicaciones y los servidores de servicios se
+adoptó asignación de direcciones estática en ambas familias de protocolos.
+Esta decisión responde a que dichos dispositivos son puntos críticos de la
+infraestructura: una dirección que cambie en un router o en un servidor
+invalida rutas configuradas, entradas DNS y reglas de firewall, introduciendo
+interrupciones difíciles de diagnosticar en producción. La asignación estática
+elimina esta fuente de inestabilidad y facilita la trazabilidad durante la
+administración remota.
+
+Para los equipos de usuario final se adoptó asignación dinámica. En IPv4 se
+emplea DHCP, de modo que un servidor centralizado distribuye direcciones,
+máscara, puerta de enlace y servidor DNS a todos los hosts de cada LAN sin
+intervención manual. En IPv6 se emplea SLAAC, mecanismo mediante el cual
+cada host construye su propia dirección a partir del prefijo \texttt{/64}
+anunciado por el router en sus mensajes Router Advertisement, sin requerir
+un servidor dedicado. Esta combinación reduce la carga administrativa en redes
+con cientos de usuarios y es coherente con las prácticas estándar en redes
+empresariales de escala media.
+
+\subsection{Protocolo de Enrutamiento}
+
+Se seleccionó OSPF como protocolo de enrutamiento dinámico para IPv4, y su
+extensión OSPFv3 para IPv6. La elección de OSPF sobre alternativas como RIP
+se fundamenta en tres razones principales. Primero, OSPF es un protocolo de
+estado de enlace que converge significativamente más rápido que los protocolos
+de vector de distancia ante cambios en la topología, lo cual es relevante en
+una red multi-sede donde una caída de enlace no debe prolongarse en
+inconsistencias de ruteo. Segundo, OSPF no tiene la limitación de 15 saltos
+de RIP, lo que lo hace apropiado para topologías que puedan crecer en número
+de sedes. Tercero, OSPFv3 extiende de forma nativa el mismo mecanismo a IPv6,
+permitiendo mantener una única lógica de enrutamiento para ambas familias de
+protocolos.
+
+Toda la topología se configura dentro de una única área OSPF (área 0), dado
+que el número de routers no justifica la segmentación en áreas adicionales y
+una sola área simplifica la configuración y el diagnóstico.
+
+\subsection{Seguridad en Dispositivos de Telecomunicaciones}
+
+El acceso local a los dispositivos se protege mediante contraseñas cifradas
+en consola y en las líneas de terminal virtual. Para la administración remota
+se habilita exclusivamente SSHv2, deshabilitando Telnet en todas las líneas
+VTY. SSHv2 cifra la sesión completa, incluyendo credenciales y comandos,
+lo que impide que un atacante con acceso pasivo a la red pueda capturar
+información de configuración sensible.
+
+\subsection{Seguridad en Servidores de Servicios}
+
+En el servidor Linux que aloja los servicios de aplicación se aplica una
+política de firewall restrictiva mediante UFW, abriendo únicamente los puertos
+correspondientes a cada servicio: 80 para HTTP, 25 y 143 para SMTP e IMAP
+respectivamente, y el puerto definido por la implementación del servicio de
+chat. El acceso administrativo al sistema operativo se realiza por SSHv2 con
+autenticación mediante clave pública, deshabilitando la autenticación por
+contraseña en el demonio SSH para reducir la exposición a ataques de fuerza
+bruta.
+
+\subsection{Servicios de Aplicación}
+
+El servicio web se implementa sobre Nginx, servidor que ofrece bajo consumo
+de recursos y soporte nativo para IPv6 mediante la directiva
+\texttt{listen [::]:80}, permitiendo atender conexiones de ambas familias de
+protocolos sobre un único proceso. El servicio de correo se implementa con
+el stack Postfix y Dovecot: Postfix actúa como agente de transferencia de
+correo gestionando los procesos SMTP de envío y recepción, mientras que
+Dovecot expone los buzones de usuario mediante IMAP, protocolo que permite
+a los clientes acceder al correo sin descargarlo ni eliminarlo del servidor,
+lo que es adecuado para un entorno corporativo con múltiples dispositivos
+por usuario.
+
+El servicio de mensajería instantánea corresponde a la implementación
+desarrollada por el grupo en el reto previo, construida en C sobre sockets
+TCP. El servidor opera en Linux y acepta conexiones de clientes Windows a
+través de la red. Soporta múltiples usuarios simultáneos, salas de chat
+con interacción en canal común, listado de usuarios conectados mediante el
+comando \texttt{/list} e historial local de mensajes exportable a archivo
+de texto. Para cumplir el requisito de doble stack, el socket del servidor
+se configuró con la familia \texttt{AF\_INET6} y la opción
+\texttt{IPV6\_V6ONLY} deshabilitada, lo que permite aceptar conexiones tanto
+IPv4 como IPv6 sobre un único socket sin modificar la lógica de manejo de
+clientes.
