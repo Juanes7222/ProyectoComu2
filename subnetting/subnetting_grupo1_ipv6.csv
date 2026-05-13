@@ -1,0 +1,7 @@
+Segmento,Prefijo IPv6,Gateway sugerido
+LAN 1,2001:dbe:bef9:1::/64,2001:dbe:bef9:1::1
+LAN 2,2001:dbe:bef9:2::/64,2001:dbe:bef9:2::1
+LAN 3,2001:dbe:bef9:3::/64,2001:dbe:bef9:3::1
+Servidores,2001:dbe:bef9:10::/64,2001:dbe:bef9:10::1
+Enlace R1-R2,2001:dbe:bef9:ff01::/64,2001:dbe:bef9:ff01::1
+Enlace R2-R3,2001:dbe:bef9:ff02::/64,2001:dbe:bef9:ff02::1
