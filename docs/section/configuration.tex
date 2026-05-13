@@ -1,0 +1,117 @@
+\section{Descripción de la Configuración}
+
+\subsection{Configuración del Direccionamiento IPv4}
+
+El plan de direccionamiento IPv4 se construyó a partir del bloque asignado
+\texttt{172.16.192.0/19}, aplicando segmentación jerárquica mediante VLSM para
+ajustar el tamaño de cada subred a la cantidad real de hosts requeridos en cada
+área. Con el crecimiento previsto del 10\% sobre la cantidad de usuarios, LAN 1
+requiere capacidad para 936 hosts, LAN 2 para 660 hosts y LAN 3 para 221 hosts.
+Por esta razón, LAN 1 y LAN 2 se asignaron con prefijo \texttt{/22}, mientras que
+LAN 3 se asignó con prefijo \texttt{/24}, lo que garantiza suficiente espacio
+para los equipos finales y permite crecimiento adicional dentro de la misma red.
+
+La red de servidores se asignó en una subred independiente de tamaño reducido,
+\texttt{172.16.202.0/29}, con el fin de alojar los servicios centrales de la
+infraestructura sin desperdiciar direcciones. De igual forma, los enlaces entre
+routers se configuraron con subredes \texttt{/30}, dado que solo requieren dos
+direcciones utilizables por enlace. Este criterio reduce el consumo del espacio
+de direccionamiento y mantiene una organización clara entre redes de usuarios,
+red de servicios y enlaces de interconexión.
+
+La tabla~\ref{tab:ipv4} resume la asignación propuesta para toda la topología.
+
+\begin{table}[H]
+\centering
+\caption{Plan de direccionamiento IPv4 para el Grupo 1}
+\label{tab:ipv4}
+\begin{tabularx}{\textwidth}{l l l l l l}
+\toprule
+Segmento & Red & Prefijo & Primer host & Último host & Broadcast \\
+\midrule
+LAN 1 & 172.16.192.0 & /22 & 172.16.192.1 & 172.16.195.254 & 172.16.195.255 \\
+LAN 2 & 172.16.196.0 & /22 & 172.16.196.1 & 172.16.199.254 & 172.16.199.255 \\
+LAN 3 & 172.16.200.0 & /24 & 172.16.200.1 & 172.16.200.254 & 172.16.200.255 \\
+Servidores & 172.16.202.0 & /29 & 172.16.202.1 & 172.16.202.6 & 172.16.202.7 \\
+Enlace R1-R2 & 172.16.202.8 & /30 & 172.16.202.9 & 172.16.202.10 & 172.16.202.11 \\
+Enlace R2-R3 & 172.16.202.12 & /30 & 172.16.202.13 & 172.16.202.14 & 172.16.202.15 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Configuración del Direccionamiento IPv6}
+
+Para IPv6 se utilizó el prefijo asignado \texttt{2001:dbe:bef9::/48}, del cual se
+derivaron subredes \texttt{/64} para cada segmento de la topología. Esta decisión
+permite mantener una estructura uniforme en todos los enlaces y simplifica la
+configuración de autoconfiguración en los hosts finales mediante SLAAC. A diferencia
+de IPv4, en IPv6 no es necesario ajustar el tamaño de subred según la cantidad de
+hosts, por lo que se adoptó una asignación homogénea por segmento.
+
+La tabla~\ref{tab:ipv6} presenta los prefijos utilizados para cada red y la
+dirección sugerida para la interfaz del router en cada segmento.
+
+\begin{table}[H]
+\centering
+\caption{Plan de direccionamiento IPv6 para el Grupo 1}
+\label{tab:ipv6}
+\begin{tabularx}{\textwidth}{l l l}
+\toprule
+Segmento & Prefijo IPv6 & Gateway sugerido \\
+\midrule
+LAN 1 & 2001:dbe:bef9:1::/64 & 2001:dbe:bef9:1::1 \\
+LAN 2 & 2001:dbe:bef9:2::/64 & 2001:dbe:bef9:2::1 \\
+LAN 3 & 2001:dbe:bef9:3::/64 & 2001:dbe:bef9:3::1 \\
+Servidores & 2001:dbe:bef9:10::/64 & 2001:dbe:bef9:10::1 \\
+Enlace R1-R2 & 2001:dbe:bef9:ff01::/64 & 2001:dbe:bef9:ff01::1 \\
+Enlace R2-R3 & 2001:dbe:bef9:ff02::/64 & 2001:dbe:bef9:ff02::1 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Configuración de los Equipos de Red}
+
+Los routers de la topología se configuran con direccionamiento estático en
+ambas familias de protocolos. Cada interfaz conectada a una LAN recibe una
+dirección de puerta de enlace dentro del rango correspondiente, mientras que
+las interfaces de interconexión entre routers utilizan las subredes punto a
+punto definidas anteriormente. Esta organización facilita la administración de
+rutas y permite identificar con claridad el papel de cada interfaz dentro de la
+topología.
+
+En los dispositivos de acceso y conmutación se habilitan contraseñas locales y
+acceso remoto seguro mediante SSHv2. El protocolo Telnet no se utiliza, debido
+a que transmite credenciales sin cifrado. Adicionalmente, se limita el acceso
+administrativo únicamente a las direcciones internas de la red, de forma que
+la configuración remota solo pueda realizarse desde los segmentos autorizados.
+
+\subsection{Configuración de los Servidores}
+
+El servidor de servicios se implementa sobre Linux con dirección fija en la
+subred \texttt{172.16.202.0/29} y su equivalente IPv6 en \texttt{2001:dbe:bef9:10::/64}.
+Sobre este host se despliegan el servidor web, el servidor de correo y el
+servidor de chat. La asignación fija es necesaria para asegurar que los clientes
+de todas las LAN puedan localizar los servicios de forma consistente sin depender
+de mecanismos dinámicos de descubrimiento.
+
+El acceso remoto al servidor se realiza mediante SSHv2, y se restringe el
+conjunto de puertos expuestos mediante una política de firewall que permite
+únicamente los servicios requeridos por el proyecto. Esta configuración reduce
+la superficie de ataque y mantiene aislados los procesos que no forman parte
+de la implementación funcional del sistema.
+
+\subsection{Configuración de los Clientes}
+
+Los equipos de usuario final reciben su configuración de red de manera dinámica.
+En IPv4 se emplea DHCP para distribuir dirección IP, máscara, puerta de enlace
+y servidor DNS. En IPv6 se utiliza SLAAC, de modo que los clientes generan su
+propia dirección a partir del prefijo anunciado por el router en cada segmento.
+Esta estrategia disminuye la carga administrativa y facilita la puesta en marcha
+de un número elevado de clientes en laboratorio.
+
+El cliente de mensajería instantánea desarrollado en Windows se conecta al
+servidor Linux mediante la dirección asignada en la red de servicios, y utiliza
+la interfaz de terminal para interactuar con el sistema. El soporte de historial
+local, listado de usuarios conectados y salas de chat se valida directamente
+sobre la conectividad establecida entre los segmentos de la red.
+
