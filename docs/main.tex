@@ -1,0 +1,107 @@
+\documentclass[12pt, letterpaper]{article}
+
+% ─────────────────────────────────────────────
+%  PAQUETES
+% ─────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{
+    letterpaper,
+    top=2.54cm,
+    bottom=2.54cm,
+    left=3.0cm,
+    right=2.54cm
+}
+
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{setspace}
+\setstretch{1.5}
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+
+% Secciones
+\usepackage{titlesec}
+\titleformat{\section}
+    {\normalfont\large\bfseries}
+    {\thesection.}{0.8em}{}[\titlerule]
+\titleformat{\subsection}
+    {\normalfont\normalsize\bfseries}
+    {\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}
+    {\normalfont\normalsize\itshape}
+    {\thesubsubsection}{0.8em}{}
+
+% Tablas
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+
+% Matemáticas
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Figuras y captions
+\usepackage{caption}
+\captionsetup{
+    font=small,
+    labelfont=bf,
+    format=hang,
+    margin=1cm
+}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+
+% Listas
+\usepackage{enumitem}
+
+% Hipervínculos
+\usepackage[hidelinks]{hyperref}
+
+\usepackage{xcolor}
+\definecolor{cBenef}{HTML}{16a34a}    % verde  — beneficio total
+\definecolor{cFlujo}{HTML}{2563eb}    % azul   — utilidad / flujo
+\definecolor{cCapac}{HTML}{dc2626}    % rojo   — restricción capacidad
+\definecolor{cCongest}{HTML}{ea580c}  % naranja — congestión acumulada
+\definecolor{cLagrange}{HTML}{7c3aed} % púrpura — coef. Lagrange
+\definecolor{cRuta}{HTML}{0891b2}     % cian   — matriz de ruteo
+
+\usepackage{pdflscape}
+
+% Bibliografía desde archivo .bib
+\usepackage{csquotes}
+\usepackage[
+    style=apa,
+    backend=biber,
+    language=spanish,
+    sorting=nyt,
+    maxbibnames=99,
+    uniquename=init,
+    uniquelist=true
+]{biblatex}
+\DeclareLanguageMapping{spanish}{spanish-apa}
+\addbibresource{references.bib}
+
+\begin{document}
+
+\input{section/front_page.tex}
+
+\input{section/introduction.tex}
+
+\input{section/requirements.tex}
+
+\input{section/decisions.tex}
+
+\input{section/configuration.tex}
+
+\input{section/design.tex}
+
+\end{document}
