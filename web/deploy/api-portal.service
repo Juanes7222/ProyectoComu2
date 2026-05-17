@@ -1,0 +1,14 @@
+[Unit]
+Description=API Portal Comunicaciones II
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# Actualice esta ruta según la ubicación real en la VM
+WorkingDirectory=/var/www/portal/backend
+ExecStart=/usr/bin/python3 /var/www/portal/backend/app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

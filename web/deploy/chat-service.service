@@ -1,0 +1,13 @@
+[Unit]
+Description=Servidor de Chat Empresarial
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/chat_server
+Restart=always
+User=root
+WorkingDirectory=/opt/chat
+
+[Install]
+WantedBy=multi-user.target
