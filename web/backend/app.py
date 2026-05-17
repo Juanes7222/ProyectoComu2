@@ -1,7 +1,10 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import socket
+import smtplib
+from email.message import EmailMessage
 
 app = FastAPI()
 
@@ -91,6 +94,29 @@ def restart_service(service_name: str):
         return {'success': True, 'status': check_service_status(service_name)}
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class EmailRequest(BaseModel):
+    to_email: str
+    subject: str
+    body: str
+
+@app.post('/api/mail/test')
+def send_test_email(request: EmailRequest):
+    """Sends a test email via the Postfix server."""
+    target_ip = "192.168.1.7"
+    try:
+        msg = EmailMessage()
+        msg.set_content(request.body)
+        msg['Subject'] = request.subject
+        msg['From'] = "portal@correo.com2.local"
+        msg['To'] = request.to_email
+
+        s = smtplib.SMTP(target_ip, 25, timeout=5)
+        s.send_message(msg)
+        s.quit()
+        return {"success": True, "message": f"Correo enviado a {request.to_email}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Falló el envío de correo: {str(e)}")
 
 
 if __name__ == '__main__':

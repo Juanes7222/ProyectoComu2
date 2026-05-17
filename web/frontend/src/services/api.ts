@@ -32,4 +32,9 @@ export const api = {
     const response = await axios.post(`${API_BASE}/services/restart/${serviceName}`);
     return response.data;
   },
+
+  async sendTestEmail(to_email: string, subject: string, body: string): Promise<{ success: boolean; message: string }> {
+    const response = await axios.post(`${API_BASE}/mail/test`, { to_email, subject, body });
+    return response.data;
+  },
 };
