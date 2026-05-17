@@ -7,7 +7,7 @@ const Correo = () => {
       <div className="bg-gray-100 p-4 rounded-lg my-4">
         <h3 className="font-bold text-lg mb-2">Datos de Conexión:</h3>
         <ul className="list-disc list-inside ml-4">
-          <li><strong>Dirección IP del servidor:</strong> (IP del servidor de servicios)</li>
+          <li><strong>Dirección IP del servidor:</strong> 192.168.1.7</li>
           <li><strong>Puerto SMTP:</strong> 25 / 587</li>
           <li><strong>Puerto IMAP:</strong> 143 / 993</li>
         </ul>

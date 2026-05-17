@@ -26,17 +26,17 @@ SERVICES_INFO = {
 
 
 def check_service_status(service_name: str) -> str:
-    """Check whether a systemd service is active."""
+    """Check whether a service port responds to connections."""
+    target_ip = "192.168.1.7"
+    port_to_check = SERVICES_INFO[service_name]['port']
     try:
-        result = subprocess.run(
-            ['systemctl', 'is-active', service_name],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        return result.stdout.strip()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.0)
+        s.connect((target_ip, port_to_check))
+        s.close()
+        return 'active'
     except Exception:
-        return 'unknown'
+        return 'inactive'
 
 
 def get_server_ip() -> str:
@@ -68,12 +68,13 @@ def get_services_status():
 def get_server_info():
     """Return server connection info for the frontend."""
     ip = get_server_ip()
+    target_services_ip = "192.168.1.7"
     return {
         'server_ip': ip,
-        'mail_server': ip,
-        'chat_server': ip,
+        'mail_server': target_services_ip,
+        'chat_server': target_services_ip,
         'mail_ports': {'smtp': 25, 'imap': 143, 'imap_ssl': 993},
-        'chat_port': 5000,
+        'chat_port': 8080,
     }
 
 
