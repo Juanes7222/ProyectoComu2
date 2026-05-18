@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard';
 import Correo from './pages/Correo';
 import Chat from './pages/Chat';
 import Topologia from './pages/Topologia';
+import TerminalRaw from './pages/TerminalRaw';
 import AuthPage from './pages/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -22,6 +23,7 @@ function AppContent() {
             <li><Link to="/correo" className="hover:underline">Correo</Link></li>
             <li><Link to="/chat" className="hover:underline">Chat</Link></li>
             <li><Link to="/topologia" className="hover:underline">Topología</Link></li>
+            <li><Link to="/terminal" className="hover:underline">Terminal</Link></li>
           </ul>
           <div className="flex items-center space-x-4 text-white">
             <span className="text-sm">Hola, {user.username}</span>
@@ -37,6 +39,7 @@ function AppContent() {
           <Route path="/correo" element={<Correo />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/topologia" element={<Topologia />} />
+          <Route path="/terminal" element={<TerminalRaw />} />
         </Routes>
       </div>
     </BrowserRouter>
