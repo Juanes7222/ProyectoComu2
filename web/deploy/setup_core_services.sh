@@ -1,64 +1,164 @@
-#!/bin/bash
-# Script de despliegue automático para los Servicios Core (Chat C + TTYD + Correo)
-# Este script debe ejecutarse con privilegios de root (sudo) en la "VM de Servicios" (TCP Server).
+#!/usr/bin/env bash
+# Despliegue robusto de Servicios Core (Chat C + TTYD + Correo)
+# Ejecutar con sudo en la VM de servicios.
 
-set -e
+set -Eeuo pipefail
+IFS=$'\n\t'
 
-echo "=========================================================="
-echo "Iniciando despliegue de Servicios Core (Chat C Server + TTYD)"
-echo "=========================================================="
+log() { printf '[%(%F %T)T] %s\n' -1 "$*"; }
+warn() { printf '[%(%F %T)T] WARN: %s\n' -1 "$*" >&2; }
+die() { printf '[%(%F %T)T] ERROR: %s\n' -1 "$*" >&2; exit 1; }
 
-# 1. Instalar dependencias para compilar en C y ttyd
-echo "[1/4] Instalando dependencias de compilación y ttyd..."
-apt-get update
-apt-get install -y build-essential gcc make ttyd sendmail ufw
+trap 'die "Falló en la línea $LINENO: $BASH_COMMAND"' ERR
 
-# Directorios de instalación
-CHAT_DIR="/opt/chat"
-mkdir -p $CHAT_DIR
+require_root() {
+  [[ "${EUID:-$(id -u)}" -eq 0 ]] || die "Este script debe ejecutarse con sudo/root."
+}
 
-# 2. Compilar Servidor C y Cliente C
-echo "[2/4] Compilando el Servidor y Cliente de Chat en C..."
-cd "$(dirname "$0")/../../chat"
+script_dir() {
+  cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+}
 
-# Asumiendo que hay un Makefile en la raíz de chat/ o en client/ y server/
-cd server
-make
-cp chat-server $CHAT_DIR/
+find_executable_in_dir() {
+  local dir="$1"
+  local preferred=("${@:2}")
+  local candidate
+  for candidate in "${preferred[@]}"; do
+    if [[ -x "$dir/$candidate" ]]; then
+      printf '%s\n' "$dir/$candidate"
+      return 0
+    fi
+  done
 
-cd ../client
-make
-cp chat-client $CHAT_DIR/
+  candidate="$(
+    find "$dir" -maxdepth 1 -type f -perm -111 \
+      ! -name '*.o' ! -name '*.a' ! -name '*.so' \
+      -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR==1 { $1=""; sub(/^ /,""); print }'
+  )"
 
-# 3. Configurar Servicios Systemd
-echo "[3/4] Configurando servicios systemd (Servidor TCP y TTYD)..."
-cd "../../web/deploy"
+  [[ -n "${candidate:-}" && -x "$candidate" ]] || return 1
+  printf '%s\n' "$candidate"
+}
 
-# Preparar ttyd (Terminal Raw)
-cp ttyd-chat.service /etc/systemd/system/
+build_component() {
+  local src_dir="$1"
+  local install_name="$2"
+  shift 2
+  local preferred_names=("$@")
 
-# Preparar chat-server daemon
-cp chat-service.service /etc/systemd/system/
+  [[ -d "$src_dir" ]] || die "No existe el directorio de compilación: $src_dir"
 
-systemctl daemon-reload
+  log "Compilando en: $src_dir"
+  if [[ -f "$src_dir/Makefile" || -f "$src_dir/makefile" ]]; then
+    make -C "$src_dir" clean >/dev/null 2>&1 || true
+    make -C "$src_dir"
+  else
+    die "No encontré Makefile en $src_dir"
+  fi
 
-# Iniciar el servidor de chat C (puerto 8080 típicamente)
-systemctl enable chat-service.service
-systemctl restart chat-service.service
+  local built_bin
+  built_bin="$(find_executable_in_dir "$src_dir" "${preferred_names[@]}")" || \
+    die "No pude detectar el binario compilado en $src_dir"
 
-# Iniciar TTYD (puerto 7681)
-systemctl enable ttyd-chat.service
-systemctl restart ttyd-chat.service
+  install -Dm755 "$built_bin" "$install_name"
+  log "Instalado: $built_bin -> $install_name"
+}
 
-# 4. Configuración de Firewall (Opcional pero recomendada)
-echo "[4/4] Configurando reglas de firewall..."
-# Permitir puerto 8080 (Servidor C TCP)
-ufw allow 8080/tcp
-# Permitir puerto 7681 (TTYD)
-ufw allow 7681/tcp
+write_unit_files() {
+  cat > /etc/systemd/system/chat-service.service <<'EOF'
+[Unit]
+Description=Servidor de Chat Empresarial
+Wants=network-online.target
+After=network-online.target
 
-echo "=========================================================="
-echo "¡Despliegue de Servicios Core completado!"
-echo "- Servidor de chat (C) corriendo en el puerto 8080"
-echo "- Terminal (ttyd) corriendo en el puerto 7681"
-echo "=========================================================="
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/chat_server
+WorkingDirectory=/opt/chat
+Restart=on-failure
+RestartSec=2
+User=root
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  cat > /etc/systemd/system/ttyd-chat.service <<'EOF'
+[Unit]
+Description=TTYD para acceso al terminal
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ttyd -p 7681 -W bash
+Restart=on-failure
+RestartSec=2
+User=root
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+ensure_ufw_port() {
+  local port="$1"
+  if command -v ufw >/dev/null 2>&1; then
+    if ufw status | grep -qi "Status: active"; then
+      ufw allow "${port}/tcp" >/dev/null || true
+      log "Firewall: permitido ${port}/tcp"
+    else
+      warn "UFW está instalado pero inactivo; no se aplicó regla para ${port}/tcp"
+    fi
+  else
+    warn "UFW no está instalado; se omite configuración de firewall"
+  fi
+}
+
+main() {
+  require_root
+
+  local sdir chat_root chat_server_dir chat_client_dir install_root
+  sdir="$(script_dir)"
+  chat_root="${CHAT_ROOT:-$(cd "$sdir/../../chat" && pwd)}"
+  install_root="/opt/chat"
+  chat_server_dir="$chat_root/server"
+  chat_client_dir="$chat_root/client"
+
+  log "Iniciando despliegue de Servicios Core"
+  log "Script: $sdir"
+  log "Repositorio chat: $chat_root"
+
+  export DEBIAN_FRONTEND=noninteractive
+  log "Instalando dependencias"
+  apt-get update
+  apt-get install -y --no-install-recommends build-essential gcc make ttyd sendmail ufw
+
+  mkdir -p "$install_root"
+
+  build_component "$chat_server_dir" /usr/local/bin/chat_server chat-server chat_server server main a.out
+  build_component "$chat_client_dir" /usr/local/bin/chat_client chat-client chat_client client main a.out
+
+  write_unit_files
+  systemctl daemon-reload
+
+  log "Habilitando y arrancando servicios"
+  systemctl enable --now chat-service.service
+  systemctl enable --now ttyd-chat.service
+
+  ensure_ufw_port 8080
+  ensure_ufw_port 7681
+
+  systemctl --no-pager --full status chat-service.service || true
+  systemctl --no-pager --full status ttyd-chat.service || true
+
+  log "Despliegue completado"
+  log "chat_server: /usr/local/bin/chat_server"
+  log "chat_client: /usr/local/bin/chat_client"
+  log "TTYD: puerto 7681"
+  log "Chat TCP: puerto 8080"
+}
+
+main "$@"
