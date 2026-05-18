@@ -32,7 +32,7 @@ cp chat-client $CHAT_DIR/
 
 # 3. Configurar Servicios Systemd
 echo "[3/4] Configurando servicios systemd (Servidor TCP y TTYD)..."
-cd "$(dirname "$0")"
+cd "../../web/deploy"
 
 # Preparar ttyd (Terminal Raw)
 cp ttyd-chat.service /etc/systemd/system/
