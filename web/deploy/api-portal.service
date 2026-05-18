@@ -5,9 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-# Actualice esta ruta según la ubicación real en la VM
-WorkingDirectory=/var/www/portal/backend
-ExecStart=/usr/bin/python3 /var/www/portal/backend/app.py
+WorkingDirectory=/opt/comu2-web/backend
+ExecStart=/opt/comu2-web/backend/venv/bin/python3 /opt/comu2-web/backend/app.py
 Restart=always
 
 [Install]
