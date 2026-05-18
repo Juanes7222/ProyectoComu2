@@ -95,57 +95,69 @@ class ChatConnection:
     def _connect_to_server(self):
         """Establish TCP connection to the chat server."""
         try:
+            print(f"[CHAT] {self.client_id}: Connecting to {self.server_ip}:{self.server_port}...")
             self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.tcp_socket.settimeout(5.0)
+            self.tcp_socket.settimeout(None)  # Bloquea indefinidamente, sin timeout
             self.tcp_socket.connect((self.server_ip, self.server_port))
             self.is_connected = True
+            print(f"[CHAT] {self.client_id}: SUCCESS - Connected to chat server {self.server_ip}:{self.server_port}")
             
             self.receiver_thread = threading.Thread(
                 target=self._receive_from_server,
                 daemon=True
             )
             self.receiver_thread.start()
-            print(f"[CHAT] Client {self.client_id} connected to chat server")
+            print(f"[CHAT] {self.client_id}: Receiver thread started")
         except Exception as e:
-            print(f"[CHAT] Failed to connect client {self.client_id} to chat server: {e}")
+            print(f"[CHAT] {self.client_id}: FAILED to connect: {e}")
             self.is_connected = False
     
     async def send_message(self, message: str):
         """Send a message from WebSocket to TCP server."""
         if not self.is_connected or self.tcp_socket is None:
+            print(f"[CHAT] {self.client_id}: Socket not ready - connected={self.is_connected}, has_socket={self.tcp_socket is not None}")
             raise Exception("Not connected to chat server")
         
         try:
             if not message.endswith('\n'):
                 message += '\n'
+            print(f"[CHAT] {self.client_id}: Sending to TCP: {repr(message)}")
             self.tcp_socket.sendall(message.encode('utf-8'))
+            print(f"[CHAT] {self.client_id}: SUCCESS - Message sent")
         except Exception as e:
+            print(f"[CHAT] {self.client_id}: ERROR sending: {e}")
             self.is_connected = False
             raise e
     
     def _receive_from_server(self):
         """Continuously read from TCP server and queue messages for WebSocket."""
         if self.tcp_socket is None:
+            print(f"[CHAT] {self.client_id}: Receiver - No socket available")
             return
         
         buffer = ""
         try:
+            print(f"[CHAT] {self.client_id}: Receiver thread - Waiting for data from server C...")
             while self.is_connected:
                 data = self.tcp_socket.recv(4096)
                 if not data:
+                    print(f"[CHAT] {self.client_id}: Receiver - Connection closed by server")
                     break
                 
+                print(f"[CHAT] {self.client_id}: Received from TCP: {repr(data[:100])}")
                 buffer += data.decode('utf-8', errors='replace')
                 
                 while '\n' in buffer:
                     line, buffer = buffer.split('\n', 1)
                     if line.strip():
+                        print(f"[CHAT] {self.client_id}: Queueing: {repr(line)}")
                         self.message_queue.put(line)
         except Exception as e:
-            print(f"[CHAT] Receiver thread error for {self.client_id}: {e}")
+            print(f"[CHAT] {self.client_id}: Receiver error - {e}")
         finally:
             self.is_connected = False
             self.message_queue.put(None)
+            print(f"[CHAT] {self.client_id}: Receiver thread ended")
     
     async def receive_messages(self):
         """Async generator that yields messages from the TCP server."""
@@ -443,6 +455,7 @@ def get_inbox_emails(request: InboxRequest):
 @app.websocket("/api/chat/ws/{client_id}")
 async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for real-time chat communication."""
+    print(f"\n[CHAT] NEW CONNECTION - Client: {client_id}")
     await chat_manager.connect(websocket, client_id)
     
     try:
@@ -458,19 +471,28 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
             try:
                 while True:
                     data = await websocket.receive_text()
+                    print(f"[CHAT] {client_id}: Received from WS: {repr(data)}")
                     
                     try:
                         payload = json.loads(data)
                         message = payload.get("message", "")
+                        print(f"[CHAT] {client_id}: Parsed - message={repr(message)}")
                         
                         if message:
+                            print(f"[CHAT] {client_id}: Forwarding to server C...")
                             success = await chat_manager.send_to_chat_server(client_id, message)
                             if not success:
+                                print(f"[CHAT] {client_id}: ERROR - Forward failed")
                                 await websocket.send_json({
                                     "type": "error",
                                     "data": "Failed to send message to chat server"
                                 })
-                    except json.JSONDecodeError:
+                            else:
+                                print(f"[CHAT] {client_id}: SUCCESS - Message forwarded")
+                        else:
+                            print(f"[CHAT] {client_id}: WARNING - Empty message")
+                    except json.JSONDecodeError as je:
+                        print(f"[CHAT] {client_id}: JSON ERROR - {je}")
                         await websocket.send_json({
                             "type": "error",
                             "data": "Invalid JSON format"
@@ -512,6 +534,16 @@ def get_chat_connection_status():
     return chat_manager.get_status()
 
 
-
+if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=5000)
+    print("\n" + "="*60)
+    print("[STARTUP] FastAPI Backend iniciando")
+    print("[STARTUP] WebSocket: ws://0.0.0.0:5000/api/chat/ws/{client_id}")
+    print("[STARTUP] Chat server: 192.168.1.7:8080")
+    print("="*60 + "\n")
+    uvicorn.run(
+        app,
+        host='0.0.0.0',
+        port=5000,
+        log_level='info',
+    )
