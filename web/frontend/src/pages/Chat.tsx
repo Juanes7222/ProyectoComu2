@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
 
 interface ChatMessage {
   id: string;
@@ -10,21 +9,24 @@ interface ChatMessage {
 }
 
 const Chat = () => {
-  const { user } = useAuth();
   const [username, setUsername] = useState<string>('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [activeRoom, setActiveRoom] = useState<string>('');
-  const [users, setUsers] = useState<string[]>([]);
-  const [rooms, setRooms] = useState<string[]>([]);
   const [showUserForm, setShowUserForm] = useState<boolean>(true);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   
   const ws = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const clientIdRef = useRef<string>(`client_${Date.now()}_${Math.random()}`);
+  const clientIdRef = useRef<string | null>(null);
   const messageCounterRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (clientIdRef.current === null) {
+      clientIdRef.current = `client_${Date.now()}_${Math.random()}`;
+    }
+  }, []);
 
   const generateMessageId = (prefix: string = 'msg'): string => {
     messageCounterRef.current += 1;
