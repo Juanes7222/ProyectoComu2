@@ -52,14 +52,11 @@ const Chat = () => {
       let wsUrl: string;
 
       if (import.meta.env.VITE_BACKEND_URL) {
-        // Production: usar URL configurada
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
         wsUrl = `${backendUrl.replace(/^http/, 'ws')}/api/chat/ws/${clientIdRef.current}`;
-        console.log('[WebSocket] DEV: URL configurada por VITE_BACKEND_URL:', wsUrl);
       } else {
-        // Development: conectar directamente al backend (evitar proxy problemas de Vite)
-        wsUrl = `ws://127.0.0.1:5000/api/chat/ws/${clientIdRef.current}`;
-        console.log('[WebSocket] DEV: Conectando directamente a backend:', wsUrl);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${wsProtocol}//${window.location.host}/api/chat/ws/${clientIdRef.current}`;
       }
 
       console.log('[WebSocket] Abriendo WebSocket...', { clientId: clientIdRef.current });
