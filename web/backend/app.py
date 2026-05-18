@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import subprocess
 import socket
 import smtplib
@@ -10,6 +10,11 @@ import email
 import ssl
 from email.header import decode_header
 import paramiko
+import threading
+import json
+import asyncio
+from typing import Dict, Optional
+from queue import Queue
 
 app = FastAPI()
 
@@ -19,6 +24,157 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class ChatConnectionManager:
+    """Manages WebSocket connections to chat clients and TCP connections to the chat server."""
+    
+    def __init__(self):
+        self.active_connections: Dict[str, 'ChatConnection'] = {}
+        self.lock = threading.Lock()
+        self.chat_server_ip = "192.168.1.7"
+        self.chat_server_port = 8080
+    
+    async def connect(self, websocket: WebSocket, client_id: str):
+        """Register a new WebSocket connection."""
+        await websocket.accept()
+        connection = ChatConnection(
+            websocket=websocket,
+            client_id=client_id,
+            server_ip=self.chat_server_ip,
+            server_port=self.chat_server_port
+        )
+        with self.lock:
+            self.active_connections[client_id] = connection
+    
+    def disconnect(self, client_id: str):
+        """Unregister a WebSocket connection and close its TCP socket."""
+        with self.lock:
+            if client_id in self.active_connections:
+                connection = self.active_connections[client_id]
+                connection.close()
+                del self.active_connections[client_id]
+    
+    async def send_to_chat_server(self, client_id: str, message: str):
+        """Send a message from WebSocket to the TCP chat server."""
+        with self.lock:
+            if client_id not in self.active_connections:
+                return False
+            connection = self.active_connections[client_id]
+        
+        try:
+            await connection.send_message(message)
+            return True
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            return False
+    
+    def get_status(self) -> dict:
+        """Return connection statistics."""
+        with self.lock:
+            return {
+                "active_connections": len(self.active_connections),
+                "clients": list(self.active_connections.keys())
+            }
+
+
+class ChatConnection:
+    """Represents a single WebSocket ↔ TCP bridge for a chat client."""
+    
+    def __init__(self, websocket: WebSocket, client_id: str, server_ip: str, server_port: int):
+        self.websocket = websocket
+        self.client_id = client_id
+        self.server_ip = server_ip
+        self.server_port = server_port
+        self.tcp_socket: Optional[socket.socket] = None
+        self.receiver_thread: Optional[threading.Thread] = None
+        self.message_queue: Queue = Queue()
+        self.is_connected = False
+        self._connect_to_server()
+    
+    def _connect_to_server(self):
+        """Establish TCP connection to the chat server."""
+        try:
+            self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcp_socket.settimeout(5.0)
+            self.tcp_socket.connect((self.server_ip, self.server_port))
+            self.is_connected = True
+            
+            self.receiver_thread = threading.Thread(
+                target=self._receive_from_server,
+                daemon=True
+            )
+            self.receiver_thread.start()
+            print(f"[CHAT] Client {self.client_id} connected to chat server")
+        except Exception as e:
+            print(f"[CHAT] Failed to connect client {self.client_id} to chat server: {e}")
+            self.is_connected = False
+    
+    async def send_message(self, message: str):
+        """Send a message from WebSocket to TCP server."""
+        if not self.is_connected or self.tcp_socket is None:
+            raise Exception("Not connected to chat server")
+        
+        try:
+            if not message.endswith('\n'):
+                message += '\n'
+            self.tcp_socket.sendall(message.encode('utf-8'))
+        except Exception as e:
+            self.is_connected = False
+            raise e
+    
+    def _receive_from_server(self):
+        """Continuously read from TCP server and queue messages for WebSocket."""
+        if self.tcp_socket is None:
+            return
+        
+        buffer = ""
+        try:
+            while self.is_connected:
+                data = self.tcp_socket.recv(4096)
+                if not data:
+                    break
+                
+                buffer += data.decode('utf-8', errors='replace')
+                
+                while '\n' in buffer:
+                    line, buffer = buffer.split('\n', 1)
+                    if line.strip():
+                        self.message_queue.put(line)
+        except Exception as e:
+            print(f"[CHAT] Receiver thread error for {self.client_id}: {e}")
+        finally:
+            self.is_connected = False
+            self.message_queue.put(None)
+    
+    async def receive_messages(self):
+        """Async generator that yields messages from the TCP server."""
+        while True:
+            try:
+                message = self.message_queue.get(timeout=0.5)
+                if message is None:
+                    break
+                yield message
+            except:
+                if not self.is_connected:
+                    break
+                await asyncio.sleep(0.1)
+    
+    def close(self):
+        """Close the TCP connection."""
+        self.is_connected = False
+        if self.tcp_socket:
+            try:
+                self.tcp_socket.close()
+            except:
+                pass
+        if self.receiver_thread:
+            self.receiver_thread.join(timeout=2)
+
+
+
+# Global connection manager
+chat_manager = ChatConnectionManager()
 
 SERVICES = {
     'postfix': 'Postfix (SMTP)',
@@ -284,6 +440,78 @@ def get_inbox_emails(request: InboxRequest):
         raise HTTPException(status_code=500, detail=f"Error IMAP: {str(e)}")
 
 
-if __name__ == '__main__':
+@app.websocket("/api/chat/ws/{client_id}")
+async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
+    """WebSocket endpoint for real-time chat communication."""
+    await chat_manager.connect(websocket, client_id)
+    
+    try:
+        with chat_manager.lock:
+            connection = chat_manager.active_connections.get(client_id)
+        
+        if not connection:
+            await websocket.close(code=1000, reason="Connection failed")
+            return
+        
+        async def receive_and_forward():
+            """Task to receive messages from WebSocket and forward to TCP."""
+            try:
+                while True:
+                    data = await websocket.receive_text()
+                    
+                    try:
+                        payload = json.loads(data)
+                        message = payload.get("message", "")
+                        
+                        if message:
+                            success = await chat_manager.send_to_chat_server(client_id, message)
+                            if not success:
+                                await websocket.send_json({
+                                    "type": "error",
+                                    "data": "Failed to send message to chat server"
+                                })
+                    except json.JSONDecodeError:
+                        await websocket.send_json({
+                            "type": "error",
+                            "data": "Invalid JSON format"
+                        })
+                    except Exception as e:
+                        await websocket.send_json({
+                            "type": "error",
+                            "data": str(e)
+                        })
+            except WebSocketDisconnect:
+                pass
+        
+        async def receive_and_send():
+            """Task to receive messages from TCP and forward to WebSocket."""
+            try:
+                async for message in connection.receive_messages():
+                    await websocket.send_json({
+                        "type": "message",
+                        "data": message
+                    })
+            except Exception as e:
+                print(f"[CHAT] Error in receive_and_send: {e}")
+        
+        await asyncio.gather(
+            receive_and_forward(),
+            receive_and_send()
+        )
+    except WebSocketDisconnect:
+        chat_manager.disconnect(client_id)
+        print(f"[CHAT] Client {client_id} disconnected")
+    except Exception as e:
+        chat_manager.disconnect(client_id)
+        print(f"[CHAT] WebSocket error for {client_id}: {e}")
+
+
+@app.get("/api/chat/status")
+def get_chat_connection_status():
+    """Return the status of active chat connections."""
+    return chat_manager.get_status()
+
+
+
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=5000)
