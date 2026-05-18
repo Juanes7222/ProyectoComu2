@@ -290,104 +290,206 @@ const Chat = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-56 bg-white border-r border-gray-200 p-4 overflow-y-auto">
+        <div className="w-72 bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200 p-5 overflow-y-auto flex flex-col">
+          {/* Mi usuario */}
+          <div className="mb-6 pb-4 border-b-2 border-gray-200">
+            <div className="flex items-center space-x-3 bg-blue-600 text-white rounded-lg p-3.5">
+              <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center font-bold text-lg">
+                {username.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate">{username}</p>
+                <p className="text-xs text-blue-100">
+                  {isConnected ? '🟢 En línea' : '🔴 Desconectado'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Usuarios conectados */}
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">COMANDOS RÁPIDOS</h3>
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">👥 Usuarios</h3>
+            <div className="space-y-1.5">
+              {messages
+                .filter((msg) => msg.type === 'received' && msg.sender && !msg.sender.includes('[#'))
+                .map((msg) => msg.sender.split('[#')[0])
+                .filter((value, index, self) => self.indexOf(value) === index && value !== 'System')
+                .slice(0, 10)
+                .map((user) => (
+                  <div
+                    key={user}
+                    className="flex items-center space-x-2.5 p-2.5 hover:bg-gray-200 rounded-lg cursor-pointer transition duration-200 group"
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 group-hover:animate-pulse"></div>
+                    <span className="text-sm text-gray-700 font-medium truncate group-hover:font-semibold">
+                      {user}
+                    </span>
+                  </div>
+                ))}
+              {messages.filter((msg) => msg.type === 'received' && msg.sender).length === 0 && (
+                <p className="text-xs text-gray-500 italic p-2">Esperando otros usuarios...</p>
+              )}
+            </div>
+          </div>
+
+          {/* Salas */}
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">🏠 Salas</h3>
+            {activeRoom ? (
+              <div className="px-3 py-2.5 bg-purple-100 text-purple-900 rounded-lg text-sm font-semibold border-l-4 border-purple-500">
+                #{activeRoom}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic p-2">Sin sala activa</p>
+            )}
+          </div>
+
+          {/* Comandos */}
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">⚙️ Comandos</h3>
             <div className="space-y-2">
               <button
                 onClick={() => handleCommandClick('/list')}
-                className="w-full text-left px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-medium transition"
+                className="w-full text-left px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
               >
-                📋 Listar Usuarios
+                <span>📋</span>
+                <span>/list</span>
               </button>
               <button
                 onClick={() => handleCommandClick('/rooms')}
-                className="w-full text-left px-3 py-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 text-sm font-medium transition"
+                className="w-full text-left px-3 py-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
               >
-                🏠 Listar Salas
+                <span>🏘️</span>
+                <span>/rooms</span>
               </button>
               {activeRoom && (
                 <button
                   onClick={() => handleCommandClick('/leave')}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-sm font-medium transition"
+                  className="w-full text-left px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
                 >
-                  🚪 Salir de Sala
+                  <span>🚪</span>
+                  <span>/leave</span>
                 </button>
               )}
             </div>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">SALA ACTIVA</h3>
-            {activeRoom ? (
-              <div className="px-3 py-2 bg-purple-100 text-purple-800 rounded-lg text-sm font-semibold">
-                #{activeRoom}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-500 italic">Sin sala activa</p>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">INFORMACIÓN</h3>
-            <p className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg">
-              Escribe mensajes normalmente o usa comandos con <code className="bg-gray-200 px-1 rounded">/</code>
-            </p>
+          {/* Info */}
+          <div className="mt-auto pt-4 border-t border-gray-200">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-3 rounded-lg">
+              <p className="text-xs text-gray-700 leading-relaxed">
+                💬 <strong>Tip:</strong> Escribe <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-semibold text-xs">/join sala</code> para entrar a una sala
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 flex flex-col bg-white">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Chat Empresarial</h2>
+                <p className="text-sm text-blue-100">
+                  {activeRoom ? `Sala: #${activeRoom}` : 'Chat general'}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center space-x-2 justify-end">
+                  <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
+                  <span className="text-sm font-medium">{isConnected ? 'En línea' : 'Fuera de línea'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
             {messages.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                <p>No hay mensajes aún. ¡Comienza la conversación!</p>
+              <div className="h-full flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <p className="text-lg font-semibold mb-2">👋 ¡Bienvenido al chat!</p>
+                  <p className="text-sm">Comienza escribiendo un mensaje</p>
+                </div>
               </div>
             ) : (
-              messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.type === 'sent' ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className={`max-w-xs px-4 py-2 rounded-lg ${
-                      msg.type === 'sent'
-                        ? 'bg-blue-500 text-white rounded-br-none'
-                        : msg.type === 'system'
-                        ? 'bg-gray-200 text-gray-800 text-center max-w-md italic'
-                        : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                    }`}
-                  >
-                    {msg.type !== 'sent' && msg.type !== 'system' && (
-                      <p className="text-xs font-semibold mb-1 text-gray-700">{msg.sender}</p>
-                    )}
-                    <p className="text-sm break-words">{msg.content}</p>
-                    <p className={`text-xs mt-1 ${msg.type === 'sent' ? 'text-blue-100' : 'text-gray-500'}`}>
-                      {msg.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-              ))
+              messages.map((msg) => {
+                if (msg.type === 'system') {
+                  return (
+                    <div key={msg.id} className="flex justify-center py-2">
+                      <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 rounded-full text-xs font-semibold text-center max-w-md">
+                        ℹ️ {msg.content}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (msg.type === 'sent') {
+                  return (
+                    <div key={msg.id} className="flex justify-end">
+                      <div className="bg-blue-600 text-white rounded-2xl rounded-tr-none px-5 py-3 max-w-xs shadow-md hover:shadow-lg transition">
+                        <p className="text-sm break-words leading-relaxed">{msg.content}</p>
+                        <p className="text-xs text-blue-100 mt-1.5 text-right">
+                          {msg.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (msg.type === 'received') {
+                  const sender = msg.sender.split('[#')[0];
+                  const room = msg.sender.includes('[#') ? msg.sender.match(/\[#(\w+)\]/)?.[1] : null;
+                  
+                  return (
+                    <div key={msg.id} className="flex justify-start">
+                      <div className="flex space-x-3 max-w-xs">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {sender.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-baseline space-x-2 mb-1">
+                            <span className="text-sm font-bold text-gray-800">{sender}</span>
+                            {room && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">#{room}</span>}
+                            <span className="text-xs text-gray-500">
+                              {msg.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="bg-gray-200 text-gray-900 rounded-2xl rounded-tl-none px-5 py-3 shadow-sm hover:shadow-md transition">
+                            <p className="text-sm break-words leading-relaxed">{msg.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return null;
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
-          <div className="bg-white border-t border-gray-200 p-4">
-            <div className="flex space-x-3">
+          <div className="bg-white border-t border-gray-300 p-4 shadow-lg">
+            <div className="flex space-x-3 items-end">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Escribe un mensaje o comando..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Escribe un mensaje o comando (/list, /rooms, /join...)..."
+                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200 text-sm"
                 disabled={!isConnected}
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!isConnected || !inputValue.trim()}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-2xl font-bold transition duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg disabled:shadow-none"
               >
-                Enviar
+                <span>📤</span>
+                <span>Enviar</span>
               </button>
             </div>
           </div>
