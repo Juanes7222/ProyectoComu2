@@ -9,6 +9,7 @@ import imaplib
 import email
 import ssl
 from email.header import decode_header
+import paramiko
 
 app = FastAPI()
 
@@ -99,10 +100,78 @@ def restart_service(service_name: str):
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post('/api/auth/login')
+def login(request: AuthRequest):
+    """Verifies credentials against the IMAP server."""
+    target_ip = "192.168.1.7"
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        mail = imaplib.IMAP4(target_ip, 143)
+        try:
+            mail.starttls(ssl_context=ctx)
+        except Exception:
+            pass
+        
+        mail.login(request.username, request.password)
+        mail.logout()
+        return {"success": True, "message": "Login exitoso"}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Fallo login IMAP: {str(e)}")
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    admin_password: str
+
+@app.post('/api/auth/register')
+def register(request: RegisterRequest):
+    """Creates a new mail user via SSH on the target server."""
+    target_ip = "192.168.1.7"
+    admin_user = "juanes"
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(target_ip, username=admin_user, password=request.admin_password, timeout=10)
+        
+        # 1. Crear el usuario con consola estándar para evitar bloqueos de PAM
+        stdin1, stdout1, stderr1 = ssh.exec_command(f"sudo -S useradd -m -s /bin/bash {request.username}")
+        stdin1.write(request.admin_password + "\n")
+        stdin1.flush()
+        stdin1.close()  # <-- Enviar EOF para que no se quede colgado
+        err1 = stderr1.read().decode()
+        
+        if "already exists" in err1:
+            ssh.close()
+            raise HTTPException(status_code=400, detail="El usuario ya existe")
+            
+        # 2. Asignarle la contraseña de manera limpia (sin inyecciones problemáticas)
+        stdin2, stdout2, stderr2 = ssh.exec_command("sudo -S chpasswd")
+        stdin2.write(request.admin_password + "\n")
+        stdin2.write(f"{request.username}:{request.password}\n")
+        stdin2.flush()
+        stdin2.close()  # <-- CRÍTICO: chpasswd espera un EOF (Ctrl+D) para terminar, sino se cuelga infinito
+        err2 = stderr2.read().decode()
+        
+        ssh.close()
+        return {"success": True, "message": f"Usuario {request.username} creado exitosamente"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creando usuario por SSH: {str(e)}")
+
+
 class EmailRequest(BaseModel):
     to_email: str
     subject: str
     body: str
+    from_email: str | None = None
 
 @app.post('/api/mail/test')
 def send_test_email(request: EmailRequest):
@@ -112,7 +181,7 @@ def send_test_email(request: EmailRequest):
         msg = EmailMessage()
         msg.set_content(request.body)
         msg['Subject'] = request.subject
-        msg['From'] = "portal@correo.com2.local"
+        msg['From'] = request.from_email or "portal@correo.com2.local"
         msg['To'] = request.to_email
 
         s = smtplib.SMTP(target_ip, 25, timeout=5)
@@ -180,11 +249,34 @@ def get_inbox_emails(request: InboxRequest):
                 for response_part in data:
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
+                        body_text = ""
+                        
+                        # Intentar extraer el body del correo
+                        if msg.is_multipart():
+                            for part in msg.walk():
+                                if part.get_content_type() == "text/plain":
+                                    payload = part.get_payload(decode=True)
+                                    if isinstance(payload, bytes):
+                                        body_text = payload.decode('utf-8', errors='replace')
+                                    else:
+                                        body_text = str(payload)
+                                    break
+                        else:
+                            payload = msg.get_payload(decode=True)
+                            if isinstance(payload, bytes):
+                                body_text = payload.decode('utf-8', errors='replace')
+                            else:
+                                body_text = str(msg.get_payload())
+                        
+                        # Limitar a 500 caracteres
+                        body_preview = body_text[:500] if body_text else ""
+                        
                         emails_list.append({
                             "id": num.decode(),
                             "subject": decode_mime_words(msg.get("Subject", "(Sin Asunto)")),
                             "from": decode_mime_words(msg.get("From", "Desconocido")),
-                            "date": msg.get("Date", "")
+                            "date": msg.get("Date", ""),
+                            "body": body_preview
                         })
         mail.logout()
         return {"success": True, "emails": emails_list}

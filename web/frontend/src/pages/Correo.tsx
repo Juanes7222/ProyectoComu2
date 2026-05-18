@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { api, EmailMessage } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Correo = () => {
+  const { user } = useAuth();
   const [toEmail, setToEmail] = useState('');
   const [subject, setSubject] = useState('Prueba desde el Portal Web');
   const [body, setBody] = useState('Hola,\n\nEste es un correo de prueba enviado exitosamente a través del servicio de Postfix en el proyecto de Comunicaciones II.\n\nSaludos.');
@@ -9,19 +11,43 @@ const Correo = () => {
   const [isSending, setIsSending] = useState(false);
 
   // Estados para IMAP
-  const [imapUser, setImapUser] = useState('');
-  const [imapPass, setImapPass] = useState('');
   const [inbox, setInbox] = useState<EmailMessage[]>([]);
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [imapMsg, setImapMsg] = useState('');
+  const [showCompose, setShowCompose] = useState(false);
+
+  const selectedEmail = inbox.find(e => e.id === selectedEmailId);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Sin fecha';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getInitials = (email: string) => {
+    return email.split('@')[0].substring(0, 2).toUpperCase();
+  };
 
   const handleSendTest = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
-    setStatusMsg('Enviando correo al servidor SMTP (192.168.1.7:25)...');
+    setStatusMsg('Enviando correo...');
     try {
-      const response = await api.sendTestEmail(toEmail, subject, body);
-      setStatusMsg(`✅ Éxito: ${response.message}`);
+      const fromEmail = `${user?.username}@correo.com2.local`;
+      const response = await api.sendTestEmail(toEmail, subject, body, fromEmail);
+      setStatusMsg(`✅ ${response.message}`);
+      setToEmail('');
+      setSubject('Prueba desde el Portal Web');
+      setBody('Hola,\n\nEste es un correo de prueba...');
+      setShowCompose(false);
+      setTimeout(() => handleFetchInbox(), 2000);
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message;
       setStatusMsg(`❌ Error: ${errorMsg}`);
@@ -30,17 +56,18 @@ const Correo = () => {
     }
   };
 
-  const handleFetchInbox = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFetchInbox = async () => {
+    if (!user) return;
     setIsFetching(true);
     setImapMsg('Conectando a IMAP...');
     try {
-      const response = await api.getInbox(imapUser, imapPass);
+      const response = await api.getInbox(user.username, user.pass);
       setInbox(response.emails);
-      setImapMsg(`✅ Se encontraron ${response.emails.length} correos.`);
+      setSelectedEmailId(null);
+      setImapMsg(`✅ ${response.emails.length} correos`);
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message;
-      setImapMsg(`❌ Error IMAP: ${errorMsg}`);
+      setImapMsg(`❌ Error: ${errorMsg}`);
       setInbox([]);
     } finally {
       setIsFetching(false);
@@ -48,157 +75,192 @@ const Correo = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-4">Servicio de Correo Empesarial</h1>
-        <p className="text-gray-700">Plataforma soportada nativamente en la infraestructura corporativa usando <strong>Postfix</strong> (envío y enrutamiento SMTP) y <strong>Dovecot</strong> (bandejas de entrada IMAP).</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* PANEL IZQUIERDO: EXPLICACIÓN DE USUARIOS */}
-        <div className="space-y-6">
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-            <h2 className="font-bold text-xl mb-3 text-blue-800">👤 1. Gestión de Cuentas y Usuarios</h2>
-            <p className="text-sm mb-3">En una configuración de Postfix/Dovecot, los correos electrónicos se rigen por <strong>los usuarios del sistema operativo de Linux</strong>.</p>
-            <p className="text-sm mb-3">Para crear <i>"el propio correo del usuario"</i>, debe acceder por terminal a la de Servicios (192.168.1.7) y crear un usuario válido:</p>
-            
-            <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-xs overflow-x-auto">
-              <span className="text-gray-400"># Crear un nuevo correo (ej. analista@...)</span><br/>
-              sudo adduser analista<br/><br/>
-              <span className="text-gray-400"># ¡Listo! Ya puede recibir correos.</span>
-            </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-            <h2 className="font-bold text-xl mb-3 text-blue-800">💻 2. Conectarse a la cuenta real</h2>
-            <p className="text-sm mb-3">Para utilizar la cuenta asignada, abra un cliente como <strong>Thunderbird</strong> o el utilitario de <strong>Windows Mail</strong> y agregue los siguientes parámetros.</p>
-            <ul className="text-sm ml-4 mb-3 list-disc space-y-1">
-              <li><strong>IP Mail Server:</strong> 192.168.1.7</li>
-              <li><strong>E-Mail Address:</strong> el-usuario-linux@correo.com2.local</li>
-              <li><strong>Contraseña:</strong> La clave de Linux (asignada al hacer adduser)</li>
-              <li><strong>Envíos (SMTP):</strong> Puerto 25 (Sin cifrar o STARTTLS)</li>
-              <li><strong>Recibos (IMAP):</strong> Puerto 143 (Sin cifrar o STARTTLS)</li>
-            </ul>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Correo Corporativo</h1>
+          <p className="text-gray-600">Conectado como <span className="font-semibold text-blue-600">{user?.username}@correo.com2.local</span></p>
         </div>
 
-        {/* PANEL DERECHO: HERRAMIENTA DE PRUEBA EN VIVO */}
-        <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="font-bold text-xl mb-3 text-blue-800">🚀 Herramienta de Envío SMTP</h2>
-          <p className="text-sm mb-4 text-gray-600">Simule el envío introduciendo un correo destino real (existente en Postfix) a través de nuestra API.</p>
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[80vh]">
           
-          <form onSubmit={handleSendTest} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Para (P.ej. usuario en postfix):</label>
-              <input 
-                type="text" 
-                required
-                value={toEmail}
-                onChange={e => setToEmail(e.target.value)}
-                placeholder="ej: usuario2@correo.com2.local" 
-                className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Asunto:</label>
-              <input 
-                type="text" 
-                required
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Mensaje:</label>
-              <textarea 
-                rows={4}
-                required
-                value={body}
-                onChange={e => setBody(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              ></textarea>
+          {/* LEFT PANEL: Inbox */}
+          <div className="lg:col-span-1 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex justify-between items-center">
+              <h2 className="text-white font-bold text-lg">📥 Bandeja</h2>
+              <button
+                onClick={handleFetchInbox}
+                disabled={isFetching}
+                className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium hover:bg-blue-50 transition disabled:opacity-50"
+              >
+                {isFetching ? '⟳ Actualizando...' : '⟳ Actualizar'}
+              </button>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={isSending}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
-            >
-              {isSending ? 'Conectando al servidor...' : 'Enviar correo (SMTP)'}
-            </button>
-
-            {statusMsg && (
-              <div className={`p-3 rounded mt-4 text-sm font-medium ${statusMsg.includes('✅') ? 'bg-green-100 text-green-800' : statusMsg.includes('❌') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                {statusMsg}
+            {imapMsg && (
+              <div className={`p-3 text-sm ${imapMsg.includes('❌') ? 'bg-red-50 text-red-700 border-b border-red-200' : 'bg-green-50 text-green-700 border-b border-green-200'}`}>
+                {imapMsg}
               </div>
             )}
-          </form>
+
+            <div className="flex-1 overflow-y-auto">
+              {inbox.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="text-sm">No hay correos en tu bandeja</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {inbox.map((email) => (
+                    <button
+                      key={email.id}
+                      onClick={() => setSelectedEmailId(email.id)}
+                      className={`w-full p-4 text-left transition-all hover:bg-blue-50 ${
+                        selectedEmailId === email.id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">
+                          {getInitials(email.from)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">{email.from}</p>
+                          <p className="text-gray-700 text-sm truncate">{email.subject}</p>
+                          <p className="text-gray-400 text-xs mt-1">{formatDate(email.date)}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT PANEL: Email Detail or Compose */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+            {selectedEmail ? (
+              /* Email Detail View */
+              <div className="flex flex-col h-full">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 text-white flex items-center justify-center font-bold">
+                      {getInitials(selectedEmail.from)}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900">{selectedEmail.subject}</h3>
+                      <p className="text-gray-600 text-sm mt-1">De: <span className="font-semibold">{selectedEmail.from}</span></p>
+                      <p className="text-gray-500 text-sm">{formatDate(selectedEmail.date)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 p-6 overflow-y-auto bg-white">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {selectedEmail.body || 'Sin contenido disponible'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Compose View */
+              <div className="flex flex-col h-full">
+                <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 flex justify-between items-center">
+                  <h2 className="text-white font-bold text-lg">✉️ Redactar Nuevo</h2>
+                  {showCompose && (
+                    <button
+                      onClick={() => setShowCompose(false)}
+                      className="text-white hover:bg-white hover:text-purple-600 px-3 py-1 rounded text-sm"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                
+                <form onSubmit={handleSendTest} className="flex-1 flex flex-col p-6 overflow-y-auto">
+                  <div className="space-y-4 flex-1">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Para:</label>
+                      <input
+                        type="email"
+                        required
+                        value={toEmail}
+                        onChange={(e) => setToEmail(e.target.value)}
+                        placeholder="usuario@correo.com2.local"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">De:</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={`${user?.username}@correo.com2.local`}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Asunto:</label>
+                      <input
+                        type="text"
+                        required
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        placeholder="Asunto del correo"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                      />
+                    </div>
+
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Mensaje:</label>
+                      <textarea
+                        required
+                        rows={8}
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        placeholder="Escribe tu mensaje aquí..."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {statusMsg && (
+                    <div className={`p-4 rounded-lg mt-4 text-sm font-medium ${
+                      statusMsg.includes('✅') 
+                        ? 'bg-green-50 text-green-700 border border-green-200' 
+                        : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}>
+                      {statusMsg}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSending}
+                    className="mt-6 w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-4 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    {isSending ? '📤 Enviando...' : '📤 Enviar Correo'}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Floating Action Button */}
+        <button
+          onClick={() => {
+            setSelectedEmailId(null);
+            setShowCompose(!showCompose);
+          }}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center text-2xl"
+        >
+          ✉️
+        </button>
       </div>
-
-      {/* PANEL INFERIOR: BANDEJA DE ENTRADA IMAP */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h2 className="font-bold text-2xl mb-2 text-blue-800">📥 Lector de Correos (Protocolo IMAP)</h2>
-        <p className="text-sm mb-6 text-gray-600">Puede conectarse al servicio Dovecot nativamente desde aquí para consultar la bandeja de entrada de su usuario.</p>
-        
-        <form onSubmit={handleFetchInbox} className="flex flex-col md:flex-row gap-4 mb-6">
-          <input 
-            type="text" 
-            required
-            value={imapUser}
-            onChange={e => setImapUser(e.target.value)}
-            placeholder="Usuario (ej: usuario2)" 
-            className="flex-1 p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-          />
-          <input 
-            type="password" 
-            required
-            value={imapPass}
-            onChange={e => setImapPass(e.target.value)}
-            placeholder="Contraseña" 
-            className="flex-1 p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-          />
-          <button 
-            type="submit" 
-            disabled={isFetching}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            {isFetching ? 'Leyendo...' : 'Consultar Inbox'}
-          </button>
-        </form>
-
-        {imapMsg && (
-          <div className={`p-3 rounded mb-4 text-sm font-medium ${imapMsg.includes('✅') ? 'bg-green-100 text-green-800' : imapMsg.includes('❌') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-            {imapMsg}
-          </div>
-        )}
-
-        {inbox.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead className="bg-gray-100 border-b border-gray-200">
-                <tr>
-                  <th className="py-3 px-4 text-left font-semibold text-gray-700 text-sm">Remitente</th>
-                  <th className="py-3 px-4 text-left font-semibold text-gray-700 text-sm">Asunto</th>
-                  <th className="py-3 px-4 text-left font-semibold text-gray-700 text-sm">Fecha</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {inbox.map((email) => (
-                  <tr key={email.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-800">{email.from}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800">{email.subject}</td>
-                    <td className="py-3 px-4 text-sm text-gray-500">{email.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
     </div>
   );
 };
