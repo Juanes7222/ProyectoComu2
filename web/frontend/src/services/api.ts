@@ -17,6 +17,13 @@ export interface ServerInfo {
   chat_port: number;
 }
 
+export interface EmailMessage {
+  id: string;
+  subject: string;
+  from: string;
+  date: string;
+}
+
 export const api = {
   async getServicesStatus(): Promise<Record<string, ServiceStatus>> {
     const response = await axios.get(`${API_BASE}/services/status`);
@@ -35,6 +42,11 @@ export const api = {
 
   async sendTestEmail(to_email: string, subject: string, body: string): Promise<{ success: boolean; message: string }> {
     const response = await axios.post(`${API_BASE}/mail/test`, { to_email, subject, body });
+    return response.data;
+  },
+
+  async getInbox(username: string, password: string): Promise<{ success: boolean; emails: EmailMessage[] }> {
+    const response = await axios.post(`${API_BASE}/mail/inbox`, { username, password });
     return response.data;
   },
 };

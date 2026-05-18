@@ -5,6 +5,10 @@ import subprocess
 import socket
 import smtplib
 from email.message import EmailMessage
+import imaplib
+import email
+import ssl
+from email.header import decode_header
 
 app = FastAPI()
 
@@ -117,6 +121,75 @@ def send_test_email(request: EmailRequest):
         return {"success": True, "message": f"Correo enviado a {request.to_email}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Falló el envío de correo: {str(e)}")
+
+
+class InboxRequest(BaseModel):
+    username: str
+    password: str
+
+def decode_mime_words(s):
+    if not s:
+        return ""
+    return ''.join(
+        str(t[0], t[1] or 'utf-8', errors='replace') if isinstance(t[0], bytes) else t[0]
+        for t in decode_header(s)
+    )
+
+@app.post('/api/mail/inbox')
+def get_inbox_emails(request: InboxRequest):
+    """Fetches the last 10 emails from a local Dovecot IMAP server."""
+    target_ip = "192.168.1.7"
+    try:
+        # Configurar un contexto SSL permisivo para certificados autofirmados
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        mail = imaplib.IMAP4(target_ip, 143)
+        
+        # Escalar a conexión cifrada TLS si el servidor lo requiere
+        try:
+            mail.starttls(ssl_context=ctx)
+        except Exception:
+            pass # Si falla, intenta texto plano (puede fallar después, depende de Dovecot)
+
+        mail.login(request.username, request.password)
+        sel_status, sel_data = mail.select('INBOX')
+        
+        if sel_status != 'OK':
+            # Vamos a extraer qué dice el servidor y qué carpetas existen
+            _, folders = mail.list()
+            mail.logout()
+            raise Exception(f"Fallo al seleccionar INBOX. Razón: {sel_data}. Carpetas encontradas: {folders}")
+        
+        status, messages = mail.search(None, 'ALL')
+        if status != 'OK':
+            return {"success": False, "emails": []}
+            
+        if not messages or not messages[0]:
+            return {"success": True, "emails": []}
+            
+        mail_ids = messages[0].split()
+        latest_email_ids = mail_ids[-20:]  # Traer hasta los últimos 20
+        latest_email_ids.reverse()
+        
+        emails_list = []
+        for num in latest_email_ids:
+            status, data = mail.fetch(num, '(RFC822)')
+            if status == 'OK':
+                for response_part in data:
+                    if isinstance(response_part, tuple):
+                        msg = email.message_from_bytes(response_part[1])
+                        emails_list.append({
+                            "id": num.decode(),
+                            "subject": decode_mime_words(msg.get("Subject", "(Sin Asunto)")),
+                            "from": decode_mime_words(msg.get("From", "Desconocido")),
+                            "date": msg.get("Date", "")
+                        })
+        mail.logout()
+        return {"success": True, "emails": emails_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error IMAP: {str(e)}")
 
 
 if __name__ == '__main__':
