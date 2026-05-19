@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { api, EmailMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import tray from '../assets/ion--file-tray.svg';
+import mailBox from '../assets/solar--mailbox-bold.svg';
+import mail from '../assets/material-symbols--mail.svg';
 
 const Correo = () => {
   const { user } = useAuth();
@@ -89,7 +92,7 @@ const Correo = () => {
           {/* LEFT PANEL: Inbox */}
           <div className="lg:col-span-1 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex justify-between items-center">
-              <h2 className="text-white font-bold text-lg">📥 Bandeja</h2>
+              <h2 className="text-white font-bold text-lg"><img src={tray} alt="Buzón" className="w-6 h-6 mr-2 color-white inline" /> Bandeja</h2>
               <button
                 onClick={handleFetchInbox}
                 disabled={isFetching}
@@ -108,7 +111,7 @@ const Correo = () => {
             <div className="flex-1 overflow-y-auto">
               {inbox.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
-                  <div className="text-4xl mb-2">📭</div>
+                  <img src={mailBox} alt="Buzón vacío" className="w-24 h-24 mb-4 opacity-50" />
                   <p className="text-sm">No hay correos en tu bandeja</p>
                 </div>
               ) : (
@@ -167,7 +170,7 @@ const Correo = () => {
               /* Compose View */
               <div className="flex flex-col h-full">
                 <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 flex justify-between items-center">
-                  <h2 className="text-white font-bold text-lg">✉️ Redactar Nuevo</h2>
+                  <h2 className="text-white font-bold text-lg"><img src={mail} alt="Correo" className="w-5 h-5 mr-2 inline color-white" /> Redactar Nuevo</h2>
                   {showCompose && (
                     <button
                       onClick={() => setShowCompose(false)}

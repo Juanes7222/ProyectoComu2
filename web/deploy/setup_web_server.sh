@@ -38,6 +38,13 @@ mkdir -p /var/www/html/portal
 cp -r dist/* /var/www/html/portal/
 chown -R www-data:www-data /var/www/html/portal
 
+echo "[4.5/6] Desplegando ejecutables del cliente C..."
+mkdir -p /var/www/html/portal/downloads
+cp "$SCRIPT_DIR/../../chat/client/chat-client"     /var/www/html/portal/downloads/chat-client
+cp "$SCRIPT_DIR/../../chat/client/chat_client.exe" /var/www/html/portal/downloads/chat_client.exe
+chmod 644 /var/www/html/portal/downloads/*
+chown -R www-data:www-data /var/www/html/portal/downloads
+
 echo "[5/6] Configurando servicios systemd..."
 cp "$SCRIPT_DIR/api-portal.service" /etc/systemd/system/
 systemctl daemon-reload

@@ -39,7 +39,7 @@ function Dashboard() {
           status={services['postfix']?.status || 'unknown'}
           description={services['postfix']?.description || 'Servicio de correo saliente (SMTP)'}
           port={services['postfix']?.port || 25}
-          link={`mailto:admin@${serverInfo?.server_ip || 'servidor'}`}
+          link="/correo"
         />
         
         <ServiceCard

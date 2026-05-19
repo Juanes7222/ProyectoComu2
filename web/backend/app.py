@@ -197,7 +197,7 @@ SERVICES = {
 SERVICES_INFO = {
     'postfix': {'port': 25, 'description': 'Servicio de correo saliente'},
     'dovecot': {'port': 143, 'description': 'Servicio de correo entrante'},
-    'chat-service': {'port': 5000, 'description': 'Servidor de chat en C'},
+    'chat-service': {'port': 8080, 'description': 'Servidor de chat en C'},
 }
 
 

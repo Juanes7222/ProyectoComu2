@@ -1,4 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import connected from '../assets/hugeicons--connect.svg';
+import disconnected from '../assets/ix--disconnected.svg';
+import users from '../assets/mdi--users.svg';
+import rooms from '../assets/cbi--rooms-other.svg';
+import lists from '../assets/ep--list.svg';
+import idea from '../assets/flat-color-icons--idea.svg';
+import confif from '../assets/icon-park--config.svg';
+import send from '../assets/fluent-color--send-16.svg';
 
 interface ChatMessage {
   id: string;
@@ -299,7 +307,8 @@ const Chat = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold truncate">{username}</p>
                 <p className="text-xs text-blue-100">
-                  {isConnected ? '🟢 En línea' : '🔴 Desconectado'}
+                  {isConnected ? <img src={connected} alt="Conectado" className="w-4 h-4 mr-1 inline" /> : <img src={disconnected} alt="Desconectado" className="w-4 h-4 mr-1 inline" />}
+                  {/* {isConnected ? 'En línea' : '🔴 Desconectado'} */}
                 </p>
               </div>
             </div>
@@ -307,7 +316,7 @@ const Chat = () => {
 
           {/* Usuarios conectados */}
           <div className="mb-6">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">👥 Usuarios</h3>
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1"><img src={users} alt="Usuarios" className="w-4 h-4 mr-1 inline" /> Usuarios</h3>
             <div className="space-y-1.5">
               {messages
                 .filter((msg) => msg.type === 'received' && msg.sender && !msg.sender.includes('[#'))
@@ -345,20 +354,20 @@ const Chat = () => {
 
           {/* Comandos */}
           <div className="mb-6">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">⚙️ Comandos</h3>
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1"><img src={confif} alt="Configuración" className="w-4 h-4 mr-1 inline" /> Comandos</h3>
             <div className="space-y-2">
               <button
                 onClick={() => handleCommandClick('/list')}
                 className="w-full text-left px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
               >
-                <span>📋</span>
+                <span><img src={lists} alt="Lista" className="w-4 h-4 mr-1 inline" /></span>
                 <span>/list</span>
               </button>
               <button
                 onClick={() => handleCommandClick('/rooms')}
                 className="w-full text-left px-3 py-2 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
               >
-                <span>🏘️</span>
+                <span><img src={rooms} alt="Salas" className="w-4 h-4 mr-1 inline" /></span>
                 <span>/rooms</span>
               </button>
               {activeRoom && (
@@ -366,18 +375,28 @@ const Chat = () => {
                   onClick={() => handleCommandClick('/leave')}
                   className="w-full text-left px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
                 >
-                  <span>🚪</span>
+                  <span><img src={disconnected} alt="Salir" className="w-4 h-4 mr-1 inline" /></span>
                   <span>/leave</span>
                 </button>
               )}
             </div>
           </div>
 
+          <div className="mb-6">
+            <a href="/downloads/chat-client" download="chat-client">
+             Descargar cliente Linux
+            </a>
+            <a href="/downloads/chat_client.exe" download="chat_client.exe">
+              Descargar cliente Windows
+            </a>
+          </div>
+
           {/* Info */}
           <div className="mt-auto pt-4 border-t border-gray-200">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-3 rounded-lg">
               <p className="text-xs text-gray-700 leading-relaxed">
-                💬 <strong>Tip:</strong> Escribe <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-semibold text-xs">/join sala</code> para entrar a una sala
+                <img src={idea} alt="Consejo" className="w-4 h-4 mr-1 inline" />
+                <strong>Tip:</strong> Escribe <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-semibold text-xs">/join sala</code> para entrar a una sala
               </p>
             </div>
           </div>
@@ -487,7 +506,7 @@ const Chat = () => {
                 disabled={!isConnected || !inputValue.trim()}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-2xl font-bold transition duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg disabled:shadow-none"
               >
-                <span>📤</span>
+                <span><img src={send} alt="Enviar" className="w-5 h-5" /></span>
                 <span>Enviar</span>
               </button>
             </div>

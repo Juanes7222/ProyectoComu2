@@ -7,9 +7,12 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/chat
-ExecStart=/usr/local/bin/ttyd -p 7681 -W -w /opt/chat /opt/chat/chat-client
+
+ExecStart=/usr/bin/ttyd -p 7681 -W /opt/chat/chat-client
+
 Restart=always
 RestartSec=10
+
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=ttyd-chat
