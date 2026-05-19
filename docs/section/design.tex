@@ -6,48 +6,56 @@
 \centering
 \begin{tikzpicture}[
     font=\small,
-    router/.style={draw, rounded corners, thick, minimum width=2.7cm, minimum height=1cm, align=center, fill=blue!10},
+    router/.style={draw, rounded corners, thick, minimum width=3cm, minimum height=1cm, align=center, fill=blue!10},
     switch/.style={draw, rounded corners, thick, minimum width=2.7cm, minimum height=0.9cm, align=center, fill=gray!15},
-    server/.style={draw, rounded corners, thick, minimum width=3.1cm, minimum height=1cm, align=center, fill=green!15},
-    client/.style={draw, rounded corners, thick, minimum width=2.7cm, minimum height=0.9cm, align=center, fill=orange!15},
+    server/.style={draw, rounded corners, thick, minimum width=2.8cm, minimum height=0.9cm, align=center, fill=green!15},
+    client/.style={draw, rounded corners, thick, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=orange!15},
     link/.style={-Latex, thick},
     lab/.style={midway, fill=white, inner sep=1pt}
 ]
 
-% Routers
-\node[router] (r1) at (0,0) {Router 1\\LAN 1};
-\node[router] (r2) at (7,0) {Router 2\\LAN 2};
-\node[router] (r3) at (14,0) {Router 3\\LAN 3};
+% SEDE A - Routers
+\node[router] (r1) at (0,0) {Router 1\\Sede A};
+\node[router] (r2) at (10,0) {Router 2\\Sede B};
 
-% Switches
-\node[switch] (sw1) at (0,-2.3) {Switch LAN 1};
-\node[switch] (sw2) at (7,-2.3) {Switch LAN 2};
-\node[switch] (sw3) at (14,-2.3) {Switch LAN 3};
+% Enlace entre routers
+\draw[link] (r1) -- node[lab, above] {Enlace Sede A-B} (r2);
 
-% Clients
-\node[client] (c1) at (-4,-2.3) {Clientes LAN 1};
-\node[client] (c2) at (3,-4.8) {Clientes LAN 2};
-\node[client] (c3) at (18,-4.8) {Clientes LAN 3};
+% SEDE A - LAN 1
+\node[switch] (sw1) at (-3,-2.5) {Switch\\LAN 1};
+\node[client] (c1a) at (-4.5,-4) {Host 1-1};
+\node[client] (c1b) at (-1.5,-4) {Host 1-2};
 
-% Server
-\node[server] (srv) at (7,-5.2) {Servidor Linux\\Web / Correo / Chat};
+\draw[link] (r1) -- node[lab, left] {LAN 1} (sw1);
+\draw[link] (sw1) -- (c1a);
+\draw[link] (sw1) -- (c1b);
 
-% Enlaces routers
-\draw[link] (r1) -- node[lab, above] {Enlace R1-R2} (r2);
-\draw[link] (r2) -- node[lab, above] {Enlace R2-R3} (r3);
+% SEDE A - LAN 2
+\node[switch] (sw2) at (2.5,-2.5) {Switch\\LAN 2};
+\node[client] (c2a) at (1,-4) {Host 2-1};
+\node[client] (c2b) at (4,-4) {Host 2-2};
 
-% Router-switch
-\draw[link] (r1) -- (sw1);
-\draw[link] (r2) -- (sw2);
-\draw[link] (r3) -- (sw3);
+\draw[link] (r1) -- node[lab, right] {LAN 2} (sw2);
+\draw[link] (sw2) -- (c2a);
+\draw[link] (sw2) -- (c2b);
 
-% Clientes-switch
-\draw[link] (c1) -- (sw1);
-\draw[link] (c2) -- (sw2);
-\draw[link] (c3) -- (sw3);
+% SEDE B - LAN 3
+\node[switch] (sw3) at (8,-2.5) {Switch\\LAN 3};
+\node[client] (c3a) at (6.5,-4) {Host 3-1};
+\node[client] (c3b) at (9.5,-4) {Host 3-2};
 
-% Server-switch
-\draw[link] (srv) -- (sw2);
+\draw[link] (r2) -- node[lab, left] {LAN 3} (sw3);
+\draw[link] (sw3) -- (c3a);
+\draw[link] (sw3) -- (c3b);
+
+% SEDE B - LAN 4
+\node[switch] (sw4) at (13.5,-2.5) {Switch\\LAN 4};
+\node[server] (srv1) at (12,-4) {Servidor Web};
+\node[server] (srv2) at (15,-4) {Servidor\\Correo/Chat};
+
+\draw[link] (r2) -- node[lab, right] {LAN 4} (sw4);
+\draw[link] (sw4) -- (srv1);
+\draw[link] (sw4) -- (srv2);
 
 \end{tikzpicture}
 \caption{Topología lógica propuesta para el Grupo 1}
