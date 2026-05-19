@@ -361,12 +361,14 @@ TSWLatexianTemp*
 *.dylib
 
 # Executables
-# *.exe
+*.exe
 *.out
 *.app
 *.i*86
 *.x86_64
 *.hex
+
+!chat_client.exe
 
 # Debug files
 *.dSYM/
