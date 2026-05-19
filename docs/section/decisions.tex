@@ -69,10 +69,10 @@ información de configuración sensible.
 
 \subsection{Seguridad en Servidores de Servicios}
 
-En el servidor Linux que aloja los servicios de aplicación se aplica una
+En las máquinas virtuales Linux que alojan los servicios de aplicación se aplica una
 política de firewall restrictiva mediante UFW, abriendo únicamente los puertos
-correspondientes a cada servicio: 80 para HTTP, 25 y 143 para SMTP e IMAP
-respectivamente, y el puerto definido por la implementación del servicio de
+correspondientes a cada servicio hospedado en cada VM: 80 para HTTP, 25 y 143 para SMTP e IMAP
+respectivamente, y el puerto 8080 de comunicación TCP para el de
 chat. El acceso administrativo al sistema operativo se realiza por SSHv2 con
 autenticación mediante clave pública, deshabilitando la autenticación por
 contraseña en el demonio SSH para reducir la exposición a ataques de fuerza
@@ -80,25 +80,55 @@ bruta.
 
 \subsection{Servicios de Aplicación}
 
-El servicio web se implementa sobre Nginx, servidor que ofrece bajo consumo
-de recursos y soporte nativo para IPv6 mediante la directiva
-\texttt{listen [::]:80}, permitiendo atender conexiones de ambas familias de
-protocolos sobre un único proceso. El servicio de correo se implementa con
-el stack Postfix y Dovecot: Postfix actúa como agente de transferencia de
-correo gestionando los procesos SMTP de envío y recepción, mientras que
-Dovecot expone los buzones de usuario mediante IMAP, protocolo que permite
-a los clientes acceder al correo sin descargarlo ni eliminarlo del servidor,
-lo que es adecuado para un entorno corporativo con múltiples dispositivos
-por usuario.
+La provisión de servicios corporativos se centraliza a través de un portal web unificado, el cual emplea una arquitectura moderna que separa el \textit{frontend} y el \textit{backend}. El \textit{frontend} está desarrollado como una \textit{Single Page Application} (SPA) utilizando React y Vite, ofreciendo una experiencia de usuario ágil e interactiva. Este portal es desplegado mediante Nginx, servidor web seleccionado por su bajo consumo de recursos y soporte nativo para IPv6 a través de la directiva \texttt{listen [::]:80}, lo que le permite atender peticiones de ambas familias de protocolos en un único proceso de manera simultánea. 
+
+El portal actúa como la interfaz principal accesible desde todas las áreas de la red a través del enrutador, facilitando el uso de múltiples herramientas en un mismo lugar:
+\begin{itemize}
+    \item \textbf{Dashboard y Topología:} Panel de estado general que incluye la visualización de la topología lógica de la red.
+    \item \textbf{Cliente de Correo Web:} Módulo integrado para el envío y lectura de correos empresariales.
+    \item \textbf{Terminal en el Navegador:} Integración de consola de comandos remota (vía \texttt{ttyd}) para operaciones administrativas avanzadas sin requerir clientes externos.
+    \item \textbf{Web Chat:} Cliente moderno de mensajería instantánea accesible vía navegador.
+\end{itemize}
+
+El backend del portal está construido en Python empleando FastAPI. Este servicio expone una API REST y gestiona las conexiones en tiempo real a través de \textit{WebSockets}. Resulta fundamental para la integración de los sistemas subyacentes; en el caso del servicio de chat, el \textit{backend} en Python levanta un \textit{Connection Manager} que funciona como puente bidireccional, traduciendo los comandos JSON del WebSocket de React en texto plano hacia los sockets TCP del servidor de mensajería nativo en C.
+
+Para la gestión del correo electrónico propiamente dicha, se implementa el stack Postfix y Dovecot. Postfix
+actúa como agente de transferencia de correo, gestionando los procesos SMTP
+de envío y recepción en el puerto 25. Dovecot expone los buzones de usuario
+mediante IMAP en el puerto 143, protocolo que permite a los clientes acceder
+al correo sin eliminarlo del servidor, lo que resulta adecuado para un entorno
+corporativo donde los usuarios pueden conectarse desde distintos dispositivos.
 
 El servicio de mensajería instantánea corresponde a la implementación
 desarrollada por el grupo en el reto previo, construida en C sobre sockets
-TCP. El servidor opera en Linux y acepta conexiones de clientes Windows a
-través de la red. Soporta múltiples usuarios simultáneos, salas de chat
-con interacción en canal común, listado de usuarios conectados mediante el
-comando \texttt{/list} e historial local de mensajes exportable a archivo
-de texto. Para cumplir el requisito de doble stack, el socket del servidor
-se configuró con la familia \texttt{AF\_INET6} y la opción
-\texttt{IPV6\_V6ONLY} deshabilitada, lo que permite aceptar conexiones tanto
-IPv4 como IPv6 sobre un único socket sin modificar la lógica de manejo de
-clientes.
+TCP. La arquitectura del sistema sigue un modelo cliente-servidor: el servidor
+corre en Linux como proceso continuo, mantiene una lista de clientes
+conectados y distribuye cada mensaje recibido hacia los destinatarios
+correspondientes, ya sea en conversación directa o dentro de una sala de chat.
+
+El nivel implementado corresponde al nivel intermedio del reto, que incorpora
+las funcionalidades del nivel básico más el registro y exportación del
+historial de conversación. Adicionalmente, se desarrolló el soporte de salas
+de chat como valor agregado, lo que eleva la implementación al nivel avanzado
+del reto. Las funcionalidades disponibles son las siguientes:
+
+\begin{itemize}
+    \item Registro de nombre de usuario al conectarse.
+    \item Listado de usuarios conectados y su estado mediante el comando /list.
+    \item Conversación directa entre pares de usuarios.
+    \item Creación y gestión de salas de chat con los comandos /join y /leave.
+    \item Historial local de mensajes con exportación a archivo de texto.
+    \item Desconexión limpia mediante el comando /exit.
+\end{itemize}
+
+El servidor escucha en el puerto 8080 y fue configurado con la familia de
+direcciones AF\_INET6 y la opción IPV6\_V6ONLY deshabilitada, lo que le
+permite aceptar conexiones tanto IPv4 como IPv6 sobre un único socket de
+escucha sin modificar la lógica interna de manejo de clientes. Esta
+configuración cumple el requisito de doble stack de la topología sin
+introducir duplicidad en el código del servidor.
+
+El cliente fue desarrollado para Windows utilizando la API Winsock2, e incluye
+una interfaz de terminal con soporte de color, separación visual entre mensajes
+propios y ajenos, y presentación de marcas de tiempo. El código fuente de ambos componentes está disponible en el
+repositorio del grupo en \texttt{https://github.com/Juanes7222/Socket.git}.

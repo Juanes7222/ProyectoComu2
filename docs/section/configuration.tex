@@ -83,20 +83,19 @@ a que transmite credenciales sin cifrado. Adicionalmente, se limita el acceso
 administrativo únicamente a las direcciones internas de la red, de forma que
 la configuración remota solo pueda realizarse desde los segmentos autorizados.
 
-\subsection{Configuración de los Servidores}
+\subsection{Configuración de los Servidores y Despliegue Físico}
 
-El servidor de servicios se implementa sobre Linux con dirección fija en la
-subred \texttt{172.16.202.0/29} y su equivalente IPv6 en \texttt{2001:dbe:bef9:10::/64}.
-Sobre este host se despliegan el servidor web, el servidor de correo y el
-servidor de chat. La asignación fija es necesaria para asegurar que los clientes
-de todas las LAN puedan localizar los servicios de forma consistente sin depender
-de mecanismos dinámicos de descubrimiento.
+Aunque el diseño lógico prevé un gran clúster de servidores para atender la demanda total teórica, el despliegue práctico para la validación de esta topología se realiza mediante un esquema distribuido de dos máquinas virtuales (VMs) corriendo Ubuntu 26.04 . Cada máquina virtual fue aprovisionada con 3 núcleos de procesamiento (vCPUs) y 8 GB de memoria RAM, garantizando recursos suficientes para la operación fluida de los servicios en un entorno representativo.
 
-El acceso remoto al servidor se realiza mediante SSHv2, y se restringe el
-conjunto de puertos expuestos mediante una política de firewall que permite
-únicamente los servicios requeridos por el proyecto. Esta configuración reduce
-la superficie de ataque y mantiene aislados los procesos que no forman parte
-de la implementación funcional del sistema.
+Ambos servidores cuentan con direcciones IP fijas dentro de la subred \texttt{172.16.202.0/29} (con equivalentes IPv6 en \texttt{2001:dbe:bef9:10::/64}):
+\begin{itemize}
+    \item \textbf{VM 1 (Servidor Web y Portal):} Aloja el portal React/Vite servido mediante Nginx, así como el \textit{backend} en Python (FastAPI) que provee la API REST y los WebSockets.
+    \item \textbf{VM 2 (Servidor de Correo y Chat):} Dedicada a los servicios persistentes en segundo plano, corriendo el sistema de mensajería desarrollado en C, además de los demonios Postfix y Dovecot para el correo corporativo.
+\end{itemize}
+
+Dividir los servicios en dos máquinas virtuales responde a una mejora en el aislamiento de fallos, escalabilidad a futuro y prevención de conflictos de puertos o recursos. La asignación fija es necesaria para asegurar que los clientes de todas las LAN puedan localizar los servicios de forma consistente en los registros DNS sin depender de mecanismos dinámicos.
+
+El acceso administrativo a estos servidores se realiza exclusivamente mediante SSHv2. A nivel de SO, se despliega una política de \textit{firewall} restrictiva perimetral usando UFW, que expone únicamente los puertos correspondientes a los servicios públicos. Esta configuración reduce la superficie de ataque y aísla los procesos internos que comunican ambas VM en el \textit{backend}.
 
 \subsection{Configuración de los Clientes}
 

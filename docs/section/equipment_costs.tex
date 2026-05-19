@@ -1,0 +1,188 @@
+\section{Especificaciones Técnicas y Costos}
+
+\subsection{Análisis de Requerimientos de Equipos}
+
+\subsubsection{Equipos de Telecomunicación por Área}
+
+La topología requiere calcular el número de dispositivos de red en función de
+la cantidad de hosts finales en cada área, considerando una tasa de ocupación
+de puertos del 80\% en los switches y dimensionando con el crecimiento del
+10\% ya incluido en el plan de direccionamiento.
+
+\textbf{LAN 1 (850 usuarios + 10\% crecimiento = 936 hosts):}
+
+Usando switches de 48 puertos con tasa de ocupación del 80\%, se requieren:
+
+\[
+\text{Switches LAN 1} = \frac{936}{48 \times 0{,}80} = \frac{936}{38{,}4}
+\approx 25 \text{ switches}
+\]
+
+En la práctica, se pueden agrupar mediante stacking o distribuirse en pisos,
+pero para este análisis se consideran 25 switches de capa de acceso.
+Adicionalmente, se requieren 2 switches core para redundancia en la
+distribución.
+
+\textbf{LAN 2 (600 usuarios + 10\% crecimiento = 660 hosts):}
+
+\[
+\text{Switches LAN 2} = \frac{660}{48 \times 0{,}80} = \frac{660}{38{,}4}
+\approx 18 \text{ switches}
+\]
+
+Se asignan 18 switches de acceso más 1 switch core.
+
+\textbf{LAN 3 (200 usuarios + 10\% crecimiento = 220 hosts):}
+
+\[
+\text{Switches LAN 3} = \frac{220}{48 \times 0{,}80} = \frac{220}{38{,}4}
+\approx 6 \text{ switches}
+\]
+
+Se asignan 6 switches de acceso más 1 switch core.
+
+\textbf{Routers:}
+
+La topología requiere al menos 2 routers para conectar las tres LANs y
+garantizar las rutas de enrutamiento OSPF. Se considera un router por sede
+principal, ambos configurados con capacidad suficiente para gestionar el
+tráfico agregado de 1.650 usuarios. Cada router debe tener al menos 3
+interfaces Gigabit Ethernet para conectar LANs y una interfaz WAN para la
+interconexión de sedes.
+
+\subsubsection{Equipos Finales}
+
+Los equipos de usuario final totalizan 1.650 computadoras, distribuidas en
+850 para LAN 1, 600 para LAN 2 y 200 para LAN 3. Cada equipo debe ser capaz
+de operar con doble stack IPv4/IPv6 y conectarse a la red mediante Ethernet
+con velocidad mínima de 1 Gbps.
+
+\subsubsection{Servidores}
+
+Para la red empresarial a gran escala se requiere infraestructura con dos servidores que alojen los tres servicios: uno con el servicio web y el otro con los servicios de correo y chat. Los servidores físicos debe contar con especificaciones suficientes para manejar la carga de 1.650 usuarios simultáneos en producción. Las especificaciones técnicas mínimas contempladas para dicho servidor unitario son las siguientes: procesador de 8 núcleos (AMD EPYC o Intel Xeon equivalente), 32 GB de memoria RAM, almacenamiento de 2 TB en configuración RAID 1 para redundancia, interfaz de red dual Gigabit Ethernet y sistema operativo Linux (Ubuntu Server 26.04  o equivalente).
+
+\textbf{Nota sobre el despliegue de validación real:} Aunque en este apartado teórico se cotiza un hardware físico (Dell PowerEdge) de gran escala, el despliegue práctico implementado en este proyecto para la validación emuló esta carga usando dos máquinas virtuales (VMs) de Ubuntu 26.04, cada una con 3 núcleos y 8 GB de RAM.
+
+\subsection{Tabla de Especificaciones Técnicas}
+
+El equipo de referencia para switches de acceso serán 
+Cisco Catalyst 2960L-48TQ-LL que se encuentra disponible como equipo nuevo.
+Para los switches core se selecciona el Cisco Catalyst 3650-48TS. Ambos soportan OSPF, VLANs y doble stack
+IPv4/IPv6.
+
+\begin{table}[H]
+\centering
+\caption{Especificaciones técnicas de equipos de red}
+\label{tab:equipo_specs}
+\begin{tabularx}{\textwidth}{l X l l}
+\toprule
+\textbf{Equipo} & \textbf{Especificación} & \textbf{Cantidad}
+& \textbf{Notas} \\
+\midrule
+Switch Acceso
+  & Cisco Catalyst 2960L-48TQ-LL, Layer 2, 48 puertos GE
+  & 49
+  & PoE, apilable \\
+Switch Core
+  & Cisco Catalyst 3650-48TS, Layer 3, 48 puertos GE
+  & 3
+  & Soporta OSPF, stackeable \\
+Router
+  & Cisco ISR 4331, modular, soporta OSPF dual-stack
+  & 2
+  & 3x GE, 2 slots NIM \\
+Servidor Linux
+  & Dell PowerEdge R6515, 1U, AMD EPYC 8 núcleos, 32 GB RAM, 2 TB RAID 1
+  & 2
+  & Ubuntu Server 26.04  \\
+Computadora usuario
+  & Dell OptiPlex 5090 SFF, Intel Core i5, 8 GB RAM, Ethernet 1 GE
+  & 1.650
+  & Dual stack IPv4/IPv6 \\
+Cables Ethernet
+  & Cat 6A, longitudes mixtas
+  & 2.200
+  & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Tabla de Costos y Presupuesto}
+
+Los precios mostrados corresponden a cotizaciones de referencia obtenidas de
+vendedores en línea en mayo de 2026. El Cisco ISR 4331 se cotizó en CDW a
+USD~2.178,99 por unidad en condición reacondicionada certificada
+(\url{https://www.cdw.com/product/cisco-integrated-services-router-4331-router-rack-mountable/4870090}).
+El Dell PowerEdge R6515 se cotizó desde USD~3.570,00 en configuración
+reacondicionada certificada en ServerMonkey
+(\url{https://www.servermonkey.com/servers/refurbished-dell/dell-poweredge-15th-generation/rackmount-servers/dell-poweredge-r6515.html}).
+El Dell OptiPlex 5090 SFF se cotizó en Dell Refurbished a USD~369,00 en promoción
+(\url{https://www.dellrefurbished.com/category/store-dt-small/desktops/small/1.html}).
+Las series Cisco Catalyst 2960L y 3650 están fuera de venta por Cisco, por lo que
+sus precios se toman como referencia de mercado secundario.
+Las partidas de cableado, racks, instalación y licencias se mantienen como
+estimaciones de proyecto. Todos los precios están expresados en dólares
+estadounidenses.
+
+\begin{table}[H]
+\centering
+\caption{Presupuesto estimado de equipos de red}
+\label{tab:presupuesto}
+\begin{tabularx}{\textwidth}{X r r r r}
+\toprule
+\textbf{Ítem} & \textbf{Cant.} & \textbf{Precio unit. (USD)}
+& \textbf{Subtotal (USD)} & \textbf{\% Total} \\
+\midrule
+Switches acceso Catalyst 2960L-48TQ-L & 49 & 2.846,00 & 139.454,00 & 16,7\% \\
+Switches core Catalyst 3650-48TS-L    &  3 & 2.818,00 & 8.454,00   &  1,0\% \\
+Routers ISR 4331                      &  2 & 2.178,99 & 4.357,98   &  0,5\% \\
+Servidor Dell PowerEdge R6515         &  2 & 3.570,00 & 7.140,00   &  0,8\% \\
+Computadoras Dell OptiPlex 5090 SFF   & 1.650 & 369,00 & 608.850,00 & 72,9\% \\
+Cables Cat 6A (paquetes x100)         & 22 & 450,00   & 9.900,00   &  1,2\% \\
+Racks 42U y accesorios                &  2 & 1.200,00 & 2.400,00   &  0,3\% \\
+Instalación y configuración           & --- & ---      & 46.800,00  &  5,6\% \\
+Licencias y servicios                 & --- & ---      & 11.700,00  &  1,4\% \\
+\midrule
+\textbf{Total presupuesto estimado} & & & \textbf{839.055,98} & \textbf{100,0\%} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Desglose Funcional}
+
+El hardware de infraestructura (switches, routers y servidor) representa
+aproximadamente el 20\% del presupuesto total, con una inversión estimada de
+USD~72.352. Los equipos de usuario final concentran el mayor porcentaje con
+un 72,9\%, lo que refleja el volumen de 1.650 estaciones de trabajo. Los
+servicios de instalación, configuración y licencias suman aproximadamente
+el 7\% del total, siendo en gran parte reducidos por el uso de software
+libre (Linux, Nginx, Postfix, Dovecot) en los servicios de aplicación.
+
+\subsection{Consideraciones Adicionales}
+
+\subsubsection{Escalabilidad}
+
+El presupuesto contempla el crecimiento del 10\% en el número de usuarios,
+pero no incluye redundancia de servidores ni enlaces WAN de respaldo. Para
+un entorno de producción se recomienda agregar un segundo servidor para
+failover automático, implementar enlaces WAN redundantes con MPLS de respaldo,
+instalar UPS y generadores en salas de equipos, y prever un presupuesto anual
+de mantenimiento y soporte técnico del 10\%--15\% de la inversión inicial.
+
+\subsubsection{Opciones de Reducción de Costos}
+
+Si el presupuesto es limitado, se pueden aplicar las siguientes estrategias:
+
+\begin{enumerate}
+\item Virtualización de servidores mediante un hypervisor como KVM o VMware,
+eliminando la necesidad de hardware físico separado para cada servicio.
+\item Sustitución de switches Cisco por equipos de menor costo de marcas como
+Ubiquiti o TP-Link Enterprise, que soportan VLANs y enrutamiento básico a una
+fracción del precio.
+\item Uso exclusivo de software libre para los servicios de aplicación (Linux,
+Nginx, Postfix, Dovecot), lo que ya está contemplado en el diseño actual y
+elimina costos de licenciamiento.
+\item Adquisición de computadoras reacondicionadas certificadas, que pueden
+obtenerse a entre el 40\% y el 50\% del costo de equipos nuevos.
+\end{enumerate}
+

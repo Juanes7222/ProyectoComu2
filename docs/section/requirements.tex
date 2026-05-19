@@ -12,8 +12,8 @@ ni los servidores de servicios, que requieren subredes dedicadas.
 
 Adicionalmente, la topología contempla una subred de interconexión entre
 routers para cada enlace WAN entre sedes, así como una subred dedicada para
-los servidores de servicios. En total, el diseño debe prever al menos seis
-subredes: tres para usuarios finales, una para servidores, y las necesarias
+los servidores de servicios. En total, el diseño debe prever al 5
+subredes: tres para usuarios finales, una para servidores, y 
 para los enlaces punto a punto entre dispositivos de enrutamiento.
 
 \subsection{Requerimientos de Direccionamiento}
@@ -33,17 +33,18 @@ en función de los requerimientos operativos y de administración de la red.
 \subsection{Requerimientos de Servicios}
 
 La red debe garantizar la disponibilidad de tres servicios de aplicación
-accesibles desde todos los segmentos de la topología a través del enrutador.
-El primer servicio es un servidor web que expone contenido HTTP a los usuarios
-de todas las áreas. El segundo es un servidor de correo electrónico que permite
-el envío y la recepción de mensajes entre los usuarios de la organización. El
-tercero es un servicio de mensajería instantánea implementado sobre sockets TCP,
-con soporte para salas de chat, visualización de usuarios conectados mediante el
-comando \texttt{/list} e historial local de mensajes exportable a archivo de texto.
+accesibles desde todos los segmentos de la topología: un portal web HTTP,
+un servidor de correo electrónico intra-organizacional, y un servicio
+de mensajería instantánea en red local, con soporte de salas y perfiles.
 
-Los tres servicios se alojan en un servidor Linux con dirección estática dentro
-de la subred de servidores, y deben ser accesibles tanto por IPv4 como por IPv6,
-en coherencia con el requisito de doble stack definido para toda la topología.
+Todos los servicios deben consolidarse dentro de la subred dedicada y
+operar de manera imperativa sobre protocolos de \textit{doble stack}, 
+ofreciendo accesibilidad completa tanto por IPv4 como por IPv6 de manera
+transparente para el cliente final. 
+
+En términos de implementación física, el entorno de despliegue real debía constar
+de máquinas virtuales controladas (como un clúster Ubuntu Linux 26.04), diseñadas 
+para validar todas estas funciones emulando la operación de centros de datos.
 
 \subsection{Requerimientos de Seguridad}
 
