@@ -5,7 +5,7 @@ import users from '../assets/mdi--users.svg';
 import rooms from '../assets/cbi--rooms-other.svg';
 import lists from '../assets/ep--list.svg';
 import idea from '../assets/flat-color-icons--idea.svg';
-import confif from '../assets/icon-park--config.svg';
+import config from '../assets/icon-park--config.svg';
 import send from '../assets/fluent-color--send-16.svg';
 
 interface ChatMessage {
@@ -342,7 +342,7 @@ const Chat = () => {
 
           {/* Salas */}
           <div className="mb-6">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">🏠 Salas</h3>
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1"><img src={rooms} alt="Salas" className="w-4 h-4 mr-1 inline" /> Salas</h3>
             {activeRoom ? (
               <div className="px-3 py-2.5 bg-purple-100 text-purple-900 rounded-lg text-sm font-semibold border-l-4 border-purple-500">
                 #{activeRoom}
@@ -354,7 +354,7 @@ const Chat = () => {
 
           {/* Comandos */}
           <div className="mb-6">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1"><img src={confif} alt="Configuración" className="w-4 h-4 mr-1 inline" /> Comandos</h3>
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1"><img src={config} alt="Comandos" className="w-4 h-4 mr-1 inline" /> Comandos</h3>
             <div className="space-y-2">
               <button
                 onClick={() => handleCommandClick('/list')}
@@ -383,12 +383,27 @@ const Chat = () => {
           </div>
 
           <div className="mb-6">
-            <a href="/downloads/chat-client" download="chat-client">
-             Descargar cliente Linux
-            </a>
-            <a href="/downloads/chat_client.exe" download="chat_client.exe">
-              Descargar cliente Windows
-            </a>
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3 pl-1">
+              Descargas
+            </h3>
+            <div className="space-y-2">
+              <a  
+                href="/downloads/chat-client"
+                download="chat-client"
+                className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium text-sm transition duration-200"
+              >
+                <img src={lists} alt="Linux" className="w-4 h-4" />
+                <span>Cliente Linux</span>
+              </a>
+              <a
+                href="/downloads/chat_client.exe"
+                download="chat_client.exe"
+                className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium text-sm transition duration-200"
+              >
+                <img src={lists} alt="Windows" className="w-4 h-4" />
+                <span>Cliente Windows</span>
+              </a>
+            </div>
           </div>
 
           {/* Info */}
