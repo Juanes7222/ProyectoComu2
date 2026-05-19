@@ -411,7 +411,7 @@ const Chat = () => {
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-3 rounded-lg">
               <p className="text-xs text-gray-700 leading-relaxed">
                 <img src={idea} alt="Consejo" className="w-4 h-4 mr-1 inline" />
-                <strong>Tip:</strong> Escribe <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-semibold text-xs">/join sala</code> para entrar a una sala
+                <strong>Tip:</strong> Escribe <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-semibold text-xs">/list</code> para ver los usuarios conectados o <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-semibold text-xs">/rooms</code> para ver las salas disponibles.
               </p>
             </div>
           </div>

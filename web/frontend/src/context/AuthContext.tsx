@@ -1,22 +1,35 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
+interface User {
+  username: string;
+  pass: string;
+}
+
 interface AuthContextType {
-  user: { username: string; pass: string } | null;
+  user: User | null;
   loginUser: (username: string, pass: string) => void;
   logoutUser: () => void;
 }
 
+const AUTH_STORAGE_KEY = 'auth_user';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<{ username: string; pass: string } | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const loginUser = (username: string, pass: string) => {
-    setUser({ username, pass });
+    const userData = { username, pass };
+    setUser(userData);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
   };
 
   const logoutUser = () => {
     setUser(null);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   return (

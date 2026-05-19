@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, use } from 'react';
 import { api, EmailMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import tray from '../assets/ion--file-tray.svg';
@@ -76,6 +76,15 @@ const Correo = () => {
       setIsFetching(false);
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+
+    handleFetchInbox();
+    const intervalId = setInterval(handleFetchInbox, 30000);
+
+    return () => clearInterval(intervalId);
+  }, []);;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">

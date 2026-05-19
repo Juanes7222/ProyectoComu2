@@ -23,7 +23,7 @@ function AppContent() {
             <li><Link to="/correo" className="hover:underline">Correo</Link></li>
             <li><Link to="/chat" className="hover:underline">Chat</Link></li>
             {/* <li><Link to="/topologia" className="hover:underline">Topología</Link></li> */}
-            <li><Link to="/terminal" className="hover:underline">Terminal</Link></li>
+            {/* <li><Link to="/terminal" className="hover:underline">Terminal</Link></li> */}
           </ul>
           <div className="flex items-center space-x-4 text-white">
             <span className="text-sm">Hola, {user.username}</span>
