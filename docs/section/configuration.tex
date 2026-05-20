@@ -50,6 +50,10 @@ hosts, por lo que se adoptó una asignación homogénea por segmento.
 La tabla~\ref{tab:ipv6} presenta los prefijos utilizados para cada red y la
 dirección sugerida para la interfaz del router en cada segmento.
 
+Adicionalmente, la tabla~\ref{tab:servicios} describe los servicios de red implementados en la topología, incluyendo los servidores web y de correo, junto con sus direcciones IP, protocolos utilizados y puertos asociados. Esta información permite identificar claramente los recursos disponibles en la red y los mecanismos de comunicación empleados.
+
+Por otra parte, en la tabla~\ref{tab:hosts} se muestra la asignación de direcciones IPv4 e IPv6 en los hosts finales, donde se evidencia la distribución organizada de direcciones dentro de cada subred, así como la configuración de sus respectivas puertas de enlace para garantizar la conectividad entre redes.
+
 \begin{table}[H]
 \centering
 \caption{Plan de direccionamiento IPv6 para el Grupo 1}
@@ -63,6 +67,39 @@ LAN 2 & 2001:dbe:bef9:2::/64 & 2001:dbe:bef9:2::1 \\
 LAN 3 & 2001:dbe:bef9:3::/64 & 2001:dbe:bef9:3::1 \\
 Servidores & 2001:dbe:bef9:10::/64 & 2001:dbe:bef9:10::1 \\
 Enlace R1-R2 & 2001:dbe:bef9:ff01::/64 & 2001:dbe:bef9:ff01::1 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Servicios de red y puertos utilizados}
+\label{tab:servicios}
+\begin{tabularx}{\textwidth}{l l l l l}
+\toprule
+Servicio & IPv4 & IPv6 (manual) & Puerto & Tipo \\
+\midrule
+Servidor Web & 172.16.202.6 & 2001:dbe:bef9:10::10 & 80 & HTTP \\
+Servidor Correo (SMTP) & 172.16.202.5 & 2001:dbe:bef9:10::11 & 25 & SMTP \\
+Servidor Correo (POP3) & 172.16.202.5 & 2001:dbe:bef9:10::11 & 110 & POP3 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Asignación de direcciones IP en hosts}
+\label{tab:hosts}
+\begin{tabularx}{\textwidth}{l l l l l}
+\toprule
+Dispositivo & Red & IPv4 & IPv6 (manual) & Gateway \\
+\midrule
+PC1-1 & LAN 1 & 172.16.192.253 & 2001:dbe:bef9:1::10 & 172.16.192.1 \\
+PC1-2 & LAN 1 & 172.16.192.254 & 2001:dbe:bef9:1::11 & 172.16.192.1 \\
+PC2-1 & LAN 2 & 172.16.196.253 & 2001:dbe:bef9:2::10 & 172.16.196.1 \\
+PC2-2 & LAN 2 & 172.16.196.254 & 2001:dbe:bef9:2::11 & 172.16.196.1 \\
+PC3-1 & LAN 3 & 172.16.200.253 & 2001:dbe:bef9:3::10 & 172.16.200.1 \\
+PC3-2 & LAN 3 & 172.16.200.254 & 2001:dbe:bef9:3::11 & 172.16.200.1 \\
 \bottomrule
 \end{tabularx}
 \end{table}

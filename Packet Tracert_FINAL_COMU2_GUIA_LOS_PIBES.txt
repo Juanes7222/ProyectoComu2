@@ -1,0 +1,385 @@
+----------------------------------------------------------------------------------
+					CONGIGURACION IPV4
+----------------------------------------------------------------------------------
+
+Sede A:
+enable
+conf t
+
+interface g0/0
+ip address 172.16.192.1 255.255.252.0
+no shut
+
+interface g0/1
+ip address 172.16.196.1 255.255.252.0
+no shut
+
+interface s0/0/0
+ip address 172.16.202.9 255.255.255.252
+no shut
+
+exit
+---------------------------------------------------------------------------------
+
+Sede B:
+enable
+conf t
+
+interface g0/0
+ip address 172.16.200.1 255.255.255.0 
+no shut
+
+interface g0/1
+ip address 172.16.202.1 255.255.255.248
+no shut
+
+interface s0/0/0
+ip address 172.16.202.10 255.255.255.252
+no shut
+
+exit
+--------------------------------------------------------------------------------
+
+Switch LAN1:
+conf t
+interface vlan 1
+ip address 172.16.192.2 255.255.252.0
+no shutdown
+exit
+
+ip default-gateway 172.16.192.1
+end
+write memory
+--------------------------------------------------------------------------------
+
+Switch LAN2:
+conf t
+interface vlan 1
+ip address 172.16.196.2 255.255.252.0
+no shutdown
+exit
+
+ip default-gateway 172.16.196.1
+end
+write memory
+--------------------------------------------------------------------------------
+
+Switch LAN3:
+conf t
+interface vlan 1
+ip address 172.16.200.2 255.255.255.0
+no shutdown
+exit
+
+ip default-gateway 172.16.200.1
+end
+write memory
+--------------------------------------------------------------------------------
+
+Switch LAN4 (Servidores):
+conf t
+interface vlan 1
+ip address 172.16.202.2 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.202.1
+end
+write memory
+---------------------------------------------------------------------------------
+
+LAN1:   172.16.192.0 /22     -->       172.16.192.1 - 172.16.195.254 
+
+PC1-1:
+IP: 172.16.192.253
+Máscara: 255.255.252.0
+Gateway: 172.16.192.1
+PC1-2:
+IP: 172.16.192.254
+Máscara: 255.255.252.0
+Gateway: 172.16.192.1
+---------------------------------------------------------------------------------
+
+LAN2:   172.16.196.0 /22      -->      172.16.196.1 - 172.16.199.254 
+
+PC2-1:
+IP: 172.16.196.253
+Máscara: 255.255.252.0
+Gateway: 172.16.196.1
+PC2-2:
+IP: 172.16.196.254
+Máscara: 255.255.252.0
+Gateway: 172.16.196.1
+-----------------------------------------------------------------------------------
+
+LAN3:   172.16.200.0 /24     -->       172.16.200.1 - 172.16.200.254
+
+PC3-1:
+IP: 172.16.200.253
+Máscara: 255.255.255.0
+Gateway: 172.16.200.1
+PC3-2:
+IP: 172.16.200.254
+Máscara: 255.255.255.0
+Gateway: 172.16.200.1
+-------------------------------------------------------------------------------------
+
+LAN 4:  172.16.202.0 /29      -->       172.16.202.1 - 172.16.202.6
+
+Servidor de correo/chat:
+IP: 172.16.202.5
+Máscara: 255.255.255.248
+Gateway: 172.16.202.1
+En el packet tracert se configura también el dominio del correo (cisco.com) y se crean los usuarios --> usuario : contraseña{cardona : 123, corrales : 123, camilo: 123}, se configura un usuario por pc y se manda correo.
+Servidor web:
+IP: 172.16.202.6
+Máscara: 255.255.255.248
+Gateway: 172.16.202.1
+------------------------------------------------------------------------------------
+				CONFIGURACION IPV6
+------------------------------------------------------------------------------------
+
+1. Activar IPv6 en ambos routers
+enable
+conf t
+ipv6 unicast-routing
+
+2. Interfaces:
+
+Sede A:
+enable
+conf t
+
+interface g0/0
+ipv6 address 2001:dbe:bef9:1::1/64
+no shutdown
+
+interface g0/1
+ipv6 address 2001:dbe:bef9:2::1/64
+no shutdown
+
+interface s0/0/0
+ipv6 address 2001:dbe:bef9:ff01::1/64
+no shutdown
+------------------------------------------------------------------------------------
+
+Sede B:
+enable
+conf t
+
+interface g0/0
+ipv6 address 2001:dbe:bef9:3::1/64
+no shutdown
+
+interface g0/1
+ipv6 address 2001:dbe:bef9:10::1/64
+no shutdown
+
+interface s0/0/0
+ipv6 address 2001:dbe:bef9:ff01::2/64
+no shutdown
+-------------------------------------------------------------------------------------
+
+(SOLO SI APLICA Y EL SWITCH PERMITE CONEXIONES VLAN DE IPV6 POR EJEMPLO EN PACKET TRACERT NO FUE POSIBLE)
+Switch LAN1:
+interface vlan 1
+ipv6 address 2001:dbe:bef9:1::2/64
+no shutdown
+exit
+
+ipv6 default-gateway 2001:dbe:bef9:1::1
+end
+write memory
+-------------------------------------------------------------------------------------
+
+Switch LAN2:
+interface vlan 1
+ipv6 address 2001:dbe:bef9:2::2/64
+no shutdown
+exit
+
+ipv6 default-gateway 2001:dbe:bef9:2::1
+end
+write memory
+-------------------------------------------------------------------------------------
+
+Switch LAN3:
+interface vlan 1
+ipv6 address 2001:dbe:bef9:3::2/64
+no shutdown
+exit
+
+ipv6 default-gateway 2001:dbe:bef9:3::1
+end
+write memory
+-------------------------------------------------------------------------------------
+
+Switch LAN4 (Servidores):
+conf t
+interface vlan 1
+ip address 172.16.202.2 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.202.1
+end
+write memory
+-------------------------------------------------------------------------------------
+
+Configurar host (Automatico o Manual)
+
+AUTOMATICO (Recomendación IA)
+
+En cada PC:
+
+Desktop → IP Configuration
+Selecciona: IPv6 Auto Config 	----> 	El router automáticamente les asigna IP y Gateway
+
+EN  cada servidor -> IP COnfiguration
+Selecciona: IPv6 Auto Config
+
+MANUAL
+
+LAN 1:
+PC 1-1
+- IPv6: 2001:dbe:bef9:1::10
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:1::1
+PC 1-2
+- IPv6: 2001:dbe:bef9:1::11
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:1::1
+
+LAN 2:
+PC 2-1
+- IPv6: 2001:dbe:bef9:2::10
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:2::1
+PC 2-2
+- IPv6: 2001:dbe:bef9:2::11
+- Prefix: 64
+- Default Gateay: 2001:dbe:bef9:2::1
+
+LAN 3:
+PC 3-1
+- IPv6: 2001:dbe:bef9:3::10
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:3::1
+PC 3-2
+- IPv6: 2001:dbe:bef9:3::11
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:3::1
+
+LAN 4:
+Servidor Web
+- IPv6: 2001:dbe:bef9:10::10
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:10::1
+Servidor Correo/Chat:
+- IPv6: 2001:dbe:bef9:10::11
+- Prefix: 64
+- Default Gateway: 2001:dbe:bef9:10::1
+-------------------------------------------------------------------------------------
+
+Definir Rutas ipv4 entre los Routers
+
+Sede A:
+conf t
+ip route 172.16.200.0 255.255.255.0 172.16.202.10                 --> Para llegar a LAN3, ve hacia SedeB
+ip route 172.16.202.0 255.255.255.248 172.16.202.10               --> Para llegar a LAN4, ve hacia SedeB
+--------------------------------------------------------------------------------------
+
+Sede B:
+conf t
+ip route 172.16.192.0 255.255.252.0 172.16.202.9                  --> Para llegar a LAN1, ve hacia SedeA
+ip route 172.16.196.0 255.255.252.0 172.16.202.9                  --> Para llegar a LAN2, ve hacia SedeA
+---------------------------------------------------------------------------------------
+
+Definir Rutas ipv6 entre los Routers
+
+Sede A:
+conf t
+ipv6 route 2001:dbe:bef9:3::/64 2001:dbe:bef9:ff01::2
+ipv6 route 2001:dbe:bef9:10::/64 2001:dbe:bef9:ff01::2
+---------------------------------------------------------------------------------------
+
+Sede B:
+conf t
+ipv6 route 2001:dbe:bef9:1::/64 2001:dbe:bef9:ff01::1
+ipv6 route 2001:dbe:bef9:2::/64 2001:dbe:bef9:ff01::1
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+CONFIGURACIÓN EN ROUTERS (SedeA y SedeB)
+Hacer lo mismo en ambos routers (solo cambiando el hostname)
+
+enable
+conf t
+hostname SedeA  	--->	  PARA SEDE B: hostname SedeB
+ip domain-name finalcomu.com (Configurar dominio que es necesario para SSH)
+username admin secret Admin123 (Crear usuario seguro)
+enable secret Class123 (Contraseña modo privilegiado)
+crypto key generate rsa (Generar claves RSA que es para SSH)
+
+Cuando preguntr:
+How many bits? --> 1024
+
+- Acceso remoto VTY (Usa usuario creado y desactiva Telnet):
+line vty 0 4
+login local
+transport input ssh
+exit
+
+- configurar consola:
+line console 0
+password cisco
+login
+exit
+
+- Banner de seguridad:
+banner motd #ACCESO SOLO A PERSONAL AUTORIZADO#
+
+- Encriptar contraseña:
+service password-encryption
+
+- Guardar configuración:
+end
+write memory
+
+------------------------------------------------------------------------------------------
+
+CONFIGURACIÓN EN SWITCHES
+Haz esto en TODOS los switches (LAN1, LAN2, LAN3, LAN4)
+
+enable
+conf t
+hostname SW-LAN1 (nombre del Switch (SW-LAN2 o SW-LAN3 o SW-LAN4))
+username admin secret Admin123 (Usuario)
+enable secret Class123
+ip domain-name finalcomu.com
+crypto key generate rsa
+Cuando preguntr:
+How many bits? --> 1024
+
+- VTY:
+line vty 0 4
+login local
+transport input ssh
+exit
+
+- Consola:
+line console 0
+password cisco
+login
+exit
+
+- Banner:
+banner motd #ACCESO RESTRINGIDO#
+
+- Apagar puertos no usados:
+interface range fa0/10 - 24
+shutdown
+
+- Guardar:
+end
+write memory
