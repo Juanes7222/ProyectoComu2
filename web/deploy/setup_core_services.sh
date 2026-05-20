@@ -174,6 +174,33 @@ EOF
   log "  ${provisioner_ssh_dir}/authorized_keys"
 }
 
+configure_mail_services() {
+  log "Configurando servicios de correo"
+
+  local services=(
+    postfix
+    dovecot
+  )
+
+  for svc in "${services[@]}"; do
+    log "Habilitando servicio: $svc"
+
+    systemctl enable "$svc"
+    systemctl restart "$svc"
+
+    sleep 1
+
+    if ! systemctl is-active --quiet "$svc"; then
+      journalctl -u "$svc" --no-pager -n 30 >&2 || true
+      die "El servicio $svc no pudo iniciarse"
+    fi
+
+    log "Servicio activo: $svc"
+  done
+
+  log "Servicios de correo operativos"
+}
+
 main() {
   require_root
 
@@ -191,7 +218,15 @@ main() {
   export DEBIAN_FRONTEND=noninteractive
   log "Instalando dependencias"
   apt-get update
-  apt-get install -y --no-install-recommends build-essential gcc make ttyd sendmail ufw
+  apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    make \
+    ttyd \
+    postfix \
+    dovecot-core \
+    dovecot-imapd \
+    ufw
 
   mkdir -p "$install_root"
 
@@ -199,6 +234,7 @@ main() {
   build_component "$chat_client_dir" /usr/local/bin/chat_client chat-client chat_client client main a.out
 
   create_provider
+  configure_mail_services
 
   write_unit_files
   systemctl daemon-reload
