@@ -7,6 +7,7 @@ import lists from '../assets/ep--list.svg';
 import idea from '../assets/flat-color-icons--idea.svg';
 import config from '../assets/icon-park--config.svg';
 import send from '../assets/fluent-color--send-16.svg';
+import save from '../assets/material-symbols-light--save.svg';
 
 interface ChatMessage {
   id: string;
@@ -416,6 +417,13 @@ const Chat = () => {
               >
                 <span><img src={rooms} alt="Salas" className="w-4 h-4 mr-1 inline" /></span>
                 <span>/rooms</span>
+              </button>
+              <button
+                onClick={() => handleCommandClick('/save')}
+                className="w-full text-left px-3 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium text-sm transition duration-200 flex items-center space-x-2"
+              >
+                <span><img src={save} alt="Guardar" className="w-4 h-4 mr-1 inline" /></span>
+                <span>/save</span>
               </button>
               {activeRoom && (
                 <button
