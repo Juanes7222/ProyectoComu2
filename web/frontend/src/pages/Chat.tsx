@@ -178,7 +178,13 @@ const Chat = () => {
 
   const sendMessage = (message: string) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      addSystemMessage('❌ No conectado al servidor');
+      addSystemMessage('No conectado al servidor');
+      return;
+    }
+
+    if (message === '/save') {
+      exportChatHistory();
+      addSystemMessage('Historial exportado correctamente.');
       return;
     }
 
@@ -219,6 +225,45 @@ const Chat = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const exportChatHistory = () => {
+    const now = new Date();
+    const datetime = now.toLocaleString('es-ES', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+
+    const lines: string[] = [
+      '=== Historial de Chat ===',
+      `Exportado : ${datetime}`,
+      `Servidor  : ${window.location.host}`,
+      '========================',
+      '',
+    ];
+
+    messages.forEach((msg) => {
+      if (msg.type === 'system') return;
+
+      const time = msg.timestamp.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const sender = msg.type === 'sent' ? 'you' : msg.sender;
+      lines.push(`[${time}] ${sender}: ${msg.content}`);
+    });
+
+    lines.push('', '========================');
+    const total = messages.filter((m) => m.type !== 'system').length;
+    lines.push(`Total: ${total} mensaje(s)`);
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `historial_${Date.now()}.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   if (!isConnected) {
@@ -266,7 +311,9 @@ const Chat = () => {
               <ul className="text-sm text-blue-800 space-y-1">
                 <li><code>/list</code> - Listar usuarios conectados</li>
                 <li><code>/rooms</code> - Listar salas disponibles</li>
-                <li><code>/join sala</code> - Unirse a una sala</li>
+                <li><code>/exit</code> - Salir del chat actual</li>
+                <li><code>/save</code> - Guardar conversación</li>
+                {/* <li><code>/join sala</code> - Unirse a una sala</li> */}
                 <li><code>/leave</code> - Salir de la sala actual</li>
               </ul>
             </div>
