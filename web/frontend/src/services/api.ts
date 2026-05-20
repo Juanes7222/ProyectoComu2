@@ -56,8 +56,8 @@ export const api = {
     return response.data;
   },
 
-  async register(username: string, password: string, admin_password: string): Promise<{ success: boolean; message: string }> {
-    const response = await axios.post(`${API_BASE}/auth/register`, { username, password, admin_password });
+  async register(username: string, password: string): Promise<{ success: boolean; message: string }> {
+    const response = await axios.post(`${API_BASE}/auth/register`, { username, password });
     return response.data;
   },
 };

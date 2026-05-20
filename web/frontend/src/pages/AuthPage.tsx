@@ -7,7 +7,6 @@ export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [adminPass, setAdminPass] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -21,7 +20,7 @@ export default function AuthPage() {
     try {
       if (isRegistering) {
         // Registro (Crear usuario vía SSH)
-        const res = await api.register(username, password, adminPass);
+        const res = await api.register(username, password);
         setMsg(res.message + ". Ahora puedes iniciar sesión.");
         setIsRegistering(false); // volver a login
       } else {
@@ -75,7 +74,7 @@ export default function AuthPage() {
             />
           </div>
 
-          {isRegistering && (
+          {/* {isRegistering && (
             <div>
               <label className="block text-sm font-medium mb-1 border-gray-300">
                 Clave Admin (SSH - sudo juanes):
@@ -89,7 +88,7 @@ export default function AuthPage() {
                 placeholder="requerido para useradd"
               />
             </div>
-          )}
+          )} */}
 
           <button
             type="submit"

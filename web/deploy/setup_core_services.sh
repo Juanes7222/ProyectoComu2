@@ -117,6 +117,63 @@ ensure_ufw_port() {
   fi
 }
 
+create_provider(){
+    log "Configurando usuario de automatización SSH"
+
+  local provisioner_user provisioner_home provisioner_ssh_dir
+  provisioner_user="provisioner"
+  provisioner_home="/home/${provisioner_user}"
+  provisioner_ssh_dir="${provisioner_home}/.ssh"
+
+  # Crear usuario si no existe
+  if ! id "$provisioner_user" >/dev/null 2>&1; then
+    useradd -m -s /bin/bash "$provisioner_user"
+    log "Usuario creado: $provisioner_user"
+  else
+    log "Usuario ya existe: $provisioner_user"
+  fi
+
+  # Crear directorio SSH
+  mkdir -p "$provisioner_ssh_dir"
+  chmod 700 "$provisioner_ssh_dir"
+  chown -R "${provisioner_user}:${provisioner_user}" "$provisioner_ssh_dir"
+
+  # Instalar script de provisión
+  local provision_script_source provision_script_dest
+  provision_script_source="$sdir/../../created_mail_user.sh"
+  provision_script_dest="/usr/local/sbin/create_mail_user.sh"
+
+  [[ -f "$provision_script_source" ]] || \
+    die "No existe el script de provisión: $provision_script_source"
+
+  install -Dm750 \
+    "$provision_script_source" \
+    "$provision_script_dest"
+
+  chown root:root "$provision_script_dest"
+
+  log "Script de provisión instalado:"
+  log "  $provision_script_dest"
+
+  # Configurar sudoers restringido
+  cat > /etc/sudoers.d/provisioner-mail <<EOF
+${provisioner_user} ALL=(root) NOPASSWD: ${provision_script_dest} *
+EOF
+
+  chmod 440 /etc/sudoers.d/provisioner-mail
+
+  visudo -cf /etc/sudoers.d/provisioner-mail >/dev/null || \
+    die "La configuración sudoers es inválida"
+
+  log "sudoers configurado correctamente"
+
+  log "IMPORTANTE:"
+  log "Debes copiar manualmente la clave pública SSH al usuario:"
+  log "  ${provisioner_user}"
+  log "Ruta authorized_keys:"
+  log "  ${provisioner_ssh_dir}/authorized_keys"
+}
+
 main() {
   require_root
 
@@ -141,6 +198,8 @@ main() {
   build_component "$chat_server_dir" /usr/local/bin/chat_server chat-server chat_server server main a.out
   build_component "$chat_client_dir" /usr/local/bin/chat_client chat-client chat_client client main a.out
 
+  create_provider
+
   write_unit_files
   systemctl daemon-reload
 
@@ -148,8 +207,8 @@ main() {
   systemctl enable --now chat-service.service
   systemctl enable --now ttyd-chat.service
 
-  ensure_ufw_port 8080
-  ensure_ufw_port 7681
+  # ensure_ufw_port 8080
+  # ensure_ufw_port 7681
 
   systemctl --no-pager --full status chat-service.service || true
   systemctl --no-pager --full status ttyd-chat.service || true

@@ -13,6 +13,7 @@ import paramiko
 import threading
 import json
 import asyncio
+import shlex
 from typing import Dict, Optional
 from queue import Queue
 
@@ -295,40 +296,43 @@ def login(request: AuthRequest):
 class RegisterRequest(BaseModel):
     username: str
     password: str
-    admin_password: str
 
 @app.post('/api/auth/register')
 def register(request: RegisterRequest):
-    """Creates a new mail user via SSH on the target server."""
     target_ip = "192.168.1.7"
-    admin_user = "juanes"
+    ssh_user = "provisioner"
+
     try:
+        key = paramiko.Ed25519Key.from_private_key_file("/opt/keys/provisioner_ed25519")
+
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(target_ip, username=admin_user, password=request.admin_password, timeout=10)
-        
-        # 1. Crear el usuario con consola estándar para evitar bloqueos de PAM
-        stdin1, stdout1, stderr1 = ssh.exec_command(f"sudo -S useradd -m -s /bin/bash {request.username}")
-        stdin1.write(request.admin_password + "\n")
-        stdin1.flush()
-        stdin1.close()  # <-- Enviar EOF para que no se quede colgado
-        err1 = stderr1.read().decode()
-        
-        if "already exists" in err1:
-            ssh.close()
-            raise HTTPException(status_code=400, detail="El usuario ya existe")
-            
-        # 2. Asignarle la contraseña de manera limpia (sin inyecciones problemáticas)
-        stdin2, stdout2, stderr2 = ssh.exec_command("sudo -S chpasswd")
-        stdin2.write(request.admin_password + "\n")
-        stdin2.write(f"{request.username}:{request.password}\n")
-        stdin2.flush()
-        stdin2.close()  # <-- CRÍTICO: chpasswd espera un EOF (Ctrl+D) para terminar, sino se cuelga infinito
-        err2 = stderr2.read().decode()
-        
+        ssh.connect(
+            target_ip,
+            username=ssh_user,
+            pkey=key,
+            timeout=10,
+        )
+
+        cmd = (
+            "sudo /usr/local/sbin/create_mail_user.sh "
+            f"{shlex.quote(request.username)} "
+            f"{shlex.quote(request.password)}"
+        )
+
+        stdin, stdout, stderr = ssh.exec_command(cmd)
+        exit_status = stdout.channel.recv_exit_status()
+        err = stderr.read().decode().strip()
+        out = stdout.read().decode().strip()
         ssh.close()
+
+        if exit_status != 0:
+            if "already exists" in err.lower():
+                raise HTTPException(status_code=400, detail="El usuario ya existe")
+            raise HTTPException(status_code=500, detail=err or out or "Error creando usuario")
+
         return {"success": True, "message": f"Usuario {request.username} creado exitosamente"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
