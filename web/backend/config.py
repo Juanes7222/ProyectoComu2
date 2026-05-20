@@ -1,7 +1,7 @@
 import ssl
 
 class Settings:
-    TARGET_SERVER_IP = "192.168.1.7"
+    TARGET_SERVER_IP = "172.16.202.5"
     CHAT_SERVER_PORT = 8080
     SSH_PROVISIONER_USER = "provisioner"
     SSH_KEY_PATH = "/opt/keys/provisioner_ed25519"
