@@ -67,9 +67,9 @@ correcto de cada LAN y que los clientes las adquieren automáticamente.
 \item Capturar la dirección asignada con \texttt{ipconfig}
 \item Verificar que está dentro del rango de usuario final para esa LAN:
   \begin{itemize}
-  \item LAN 1: 172.16.192.1 -- 172.16.195.254
-  \item LAN 2: 172.16.196.1 -- 172.16.199.254
-  \item LAN 3: 172.16.200.1 -- 172.16.200.254
+  \item LAN 1: \ipRangoLanUno
+  \item LAN 2: \ipRangoLanDos
+  \item LAN 3: \ipRangoLanTres
   \end{itemize}
 \item Ejecutar \texttt{ipconfig /all} para verificar gateway, máscara y DNS
 \end{enumerate}
@@ -111,7 +111,7 @@ traversan correctamente entre sedes.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item Desde Host en LAN 1 (ej: 172.16.192.10), ejecutar \texttt{ping 172.16.196.10}
+\item Desde Host en LAN 1 (ej: \ipHostLanUno), ejecutar \texttt{ping \ipHostLanDos}
 \item Capturar respuesta y latencia
 \item Desde LAN 2, hacer ping a LAN 3
 \item Desde LAN 3, hacer ping a LAN 1
@@ -133,7 +133,7 @@ traversan correctamente entre sedes.
 \textbf{Procedimiento:}
 \begin{enumerate}
 \item Desde cliente en LAN 1, ejecutar \texttt{ping} a dirección IPv6 de cliente en LAN 2
-\item Ej: \texttt{ping 2001:dbe:bef9:2::100}
+\item Ej: \texttt{ping \ipHostIpvSeisLanDos}
 \item Repetir entre otros pares de LANs
 \end{enumerate}
 
@@ -178,11 +178,11 @@ desde todos los segmentos en IPv4 e IPv6.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item Desde cliente en LAN 1, abrir navegador y acceder a \texttt{http://172.16.202.1}
+\item Desde cliente en LAN 1, abrir navegador y acceder a \texttt{http://\ipServidorWeb}
 \item Capturar página de bienvenida
 \item Repetir desde clientes en LAN 2 y LAN 3
-\item Abrir navegador y acceder a \texttt{http://[2001:dbe:bef9:10::1]}
-\item Ejecutar \texttt{curl} desde Linux: \texttt{curl -v http://172.16.202.1}
+\item Abrir navegador y acceder a \texttt{http://[\ipServidorWebIpvSeis]}
+\item Ejecutar \texttt{curl} desde Linux: \texttt{curl -v http://\ipServidorWeb}
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
@@ -201,24 +201,25 @@ desde todos los segmentos en IPv4 e IPv6.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item Desde un cliente, ejecutar \texttt{telnet 172.16.202.2 25}
-\item Verificar que responde con \texttt{220 SMTP Ready}
-\item Ejecutar \texttt{quit}
-\item Ejecutar \texttt{telnet 172.16.202.2 143}
-\item Verificar que responde con \texttt{* OK Dovecot}
-\item Configurar cliente de correo (Thunderbird) apuntando a 172.16.202.2
-\item Intenta enviar y recibir correo de prueba
+\item Desde un cliente, ejecutar \texttt{nc -zv \ipServidorCorreo{} 25} y verificar
+      que responde con \texttt{Connection to \ipServidorCorreo{} 25 port [tcp/smtp] succeeded}
+\item Ejecutar \texttt{nc -zv \ipServidorCorreo{} 143} y verificar que responde con
+      \texttt{Connection to \ipServidorCorreo{} 143 port [tcp/imap] succeeded}
+\item Desde el portal web, iniciar sesión con un usuario válido y navegar a la
+      sección de correo
+\item Enviar un correo de prueba a otro usuario desde el portal
+\item Verificar que el correo aparece en la bandeja de entrada del destinatario
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
 \begin{itemize}
-\item Puerto 25 responde con mensaje SMTP
-\item Puerto 143 responde con mensaje IMAP
-\item Cliente de correo puede conectarse y listar buzones
-\item Correo de prueba se entrega correctamente
+\item Puerto 25 reporta conexión exitosa con \texttt{nc -zv}
+\item Puerto 143 reporta conexión exitosa con \texttt{nc -zv}
+\item El portal web puede autenticarse y listar la bandeja de entrada vía IMAP
+\item El correo de prueba se entrega y es visible en el portal del destinatario
 \end{itemize}
 
-\textbf{Herramientas:} \texttt{telnet}, \texttt{nc} (netcat), cliente Thunderbird
+\textbf{Herramientas:} \texttt{nc} (netcat), portal web del proyecto
 
 \subsubsection{Prueba 3.3: Servidor de Chat}
 
@@ -232,7 +233,7 @@ conexiones de múltiples clientes simultáneos.
 \item Verificar que está escuchando en el puerto asignado:
   \texttt{ss -tuln | grep 8080}
 \item En cliente Windows 1, conectar al servidor: ejecutar cliente con
-  \texttt{./chat-client 172.16.202.3 8080}
+  \texttt{./chat-client \ipServidorChat\xspace 8080}
 \item En cliente Windows 2, conectar al mismo servidor
 \item En cliente 1, ejecutar \texttt{/list} y verificar que cliente 2 aparece
 \item Enviar mensaje desde cliente 1 y verificar que cliente 2 lo recibe
@@ -260,9 +261,9 @@ conexiones de múltiples clientes simultáneos.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item Desde cliente, intentar \texttt{telnet 172.16.192.1 23}
+\item Desde cliente, intentar \texttt{telnet \ipRouterUno 23}
 \item Verificar que \textbf{no} responde (conexión rechazada o timeout)
-\item Ejecutar \texttt{ssh admin@172.16.192.1}
+\item Ejecutar \texttt{ssh admin@\ipRouterUno}
 \item Ingresar contraseña
 \item Verificar que SSH conecta exitosamente
 \item Ejecutar \texttt{show version} en router para confirmar acceso
@@ -288,7 +289,7 @@ conexiones de múltiples clientes simultáneos.
 \item Verificar que solo están abiertos: 22 (SSH), 80 (HTTP), 25 (SMTP),
   143 (IMAP), y el puerto del servidor de chat
 \item Intentar conectar a puerto cerrado (ej: 3389 RDP):
-  \texttt{telnet 172.16.202.1 3389}
+  \texttt{telnet \ipServidorWeb\xspace 3389}
 \item Verificar que conexión es rechazada
 \item Ejecutar \texttt{sudo netstat -tuln} para listar puertos activos
 \end{enumerate}
@@ -327,43 +328,4 @@ se almacenan en forma cifrada (no texto plano).
 \end{itemize}
 
 \textbf{Herramientas:} Router CLI, \texttt{show run}
-
-\subsection{Resumen de Criterios de Aceptación}
-
-La validación del proyecto se considera exitosa cuando se cumplen \textbf{todos}
-los siguientes criterios:
-
-\begin{table}[H]
-\centering
-\caption{Matriz de aceptación del proyecto}
-\label{tab:criterios_aceptacion}
-\begin{tabularx}{\textwidth}{l l l}
-\toprule
-\textbf{Aspecto} & \textbf{Criterio} & \textbf{Estado} \\
-\midrule
-Direccionamiento IPv4 & Todas las interfaces tienen IPs del plan & --- \\
-\midrule
-Direccionamiento IPv6 & SLAAC funciona en clientes & --- \\
-\midrule
-DHCP & Clientes adquieren IPs dinámicas en rango correcto & --- \\
-\midrule
-Conectividad L3 IPv4 & Ping entre todas las LANs exitoso & --- \\
-\midrule
-Conectividad L3 IPv6 & Ping IPv6 entre LANs exitoso & --- \\
-\midrule
-OSPF/OSPFv3 & Routers tienen adyacencia FULL y conocen todas las rutas & --- \\
-\midrule
-Servidor Web & Accesible desde todas las LANs en IPv4 e IPv6 & --- \\
-\midrule
-Servidor Correo & Puertos 25 y 143 responden correctamente & --- \\
-\midrule
-Servidor Chat & Múltiples clientes conectan y se comunican & --- \\
-\midrule
-Seguridad SSH & SSH habilitado, Telnet deshabilitado & --- \\
-\midrule
-Firewall & Solo puertos necesarios abiertos & --- \\
-\midrule
-\bottomrule
-\end{tabularx}
-\end{table}
 

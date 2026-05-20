@@ -67,16 +67,16 @@ VTY. SSHv2 cifra la sesión completa, incluyendo credenciales y comandos,
 lo que impide que un atacante con acceso pasivo a la red pueda capturar
 información de configuración sensible.
 
-\subsection{Seguridad en Servidores de Servicios}
+\subsection{Seguridad y Hardening en Máquinas Virtuales}
 
-En las máquinas virtuales Linux que alojan los servicios de aplicación se aplica una
-política de firewall restrictiva mediante UFW, abriendo únicamente los puertos
-correspondientes a cada servicio hospedado en cada VM: 80 para HTTP, 25 y 143 para SMTP e IMAP
-respectivamente, y el puerto 8080 de comunicación TCP para el de
-chat. El acceso administrativo al sistema operativo se realiza por SSHv2 con
-autenticación mediante clave pública, deshabilitando la autenticación por
-contraseña en el demonio SSH para reducir la exposición a ataques de fuerza
-bruta.
+Para garantizar la seguridad del despliegue en las dos máquinas virtuales Linux (Ubuntu 26.04), se transformaron las políticas corporativas en código mediante un conjunto de scripts de automatización (\texttt{security.sh}, \texttt{setup\_core\_services.sh}, y \texttt{setup\_web\_server.sh}). Este enfoque evita configuraciones manuales propensas a error. Las decisiones principales implementadas incluyen:
+
+\begin{itemize}
+    \item \textbf{Gestión de Acceso Remoto:} El script de endurecimiento (\texttt{security.sh}) restringe SSH, deshabilitando completamente el acceso al usuario \texttt{root} (\texttt{PermitRootLogin no}) y bloqueando la autenticación por contraseña (\texttt{PasswordAuthentication no}). El ingreso exige llaves públicas (\texttt{PubkeyAuthentication yes}). 
+    \item \textbf{Firewall mediante UFW:} Automáticamente se establece una política de bloqueo para tráfico entrante (\texttt{default deny}). Además, recibe por parámetro una lista estricta de los puertos TCP permitidos para cada máquina, evitando exponer herramientas de interconexión del backend que no deberían verse desde el exterior.
+    \item \textbf{Aislamiento en Systemd:} Los demonios desplegados (como el chat en C nativo) son configurados en Systemd usando la directiva \texttt{NoNewPrivileges=yes}. Esto mitiga vulnerabilidades al evitar que los procesos hijos escalen privilegios.
+    \item \textbf{Usuario de Provisión de Mínimos Privilegios:} Se creó un perfil específico (\texttt{provisioner}) cuya única función autorizada por archivo \texttt{sudoers} (sin necesidad de contraseña) es la ejecución del script \texttt{create\_mail\_user.sh}. Aislar los permisos para la creación de usuarios de correo previene compromisos cruzados frente a toda la infraestructura.
+\end{itemize}
 
 \subsection{Servicios de Aplicación}
 
@@ -86,7 +86,6 @@ El portal actúa como la interfaz principal accesible desde todas las áreas de 
 \begin{itemize}
     \item \textbf{Dashboard y Topología:} Panel de estado general que incluye la visualización de la topología lógica de la red.
     \item \textbf{Cliente de Correo Web:} Módulo integrado para el envío y lectura de correos empresariales.
-    \item \textbf{Terminal en el Navegador:} Integración de consola de comandos remota (vía \texttt{ttyd}) para operaciones administrativas avanzadas sin requerir clientes externos.
     \item \textbf{Web Chat:} Cliente moderno de mensajería instantánea accesible vía navegador.
 \end{itemize}
 
@@ -117,7 +116,7 @@ del reto. Las funcionalidades disponibles son las siguientes:
     \item Listado de usuarios conectados y su estado mediante el comando /list.
     \item Conversación directa entre pares de usuarios.
     \item Creación y gestión de salas de chat con los comandos /join y /leave.
-    \item Historial local de mensajes con exportación a archivo de texto.
+    \item Historial local de mensajes con exportación a archivo de texto con el comando /save.
     \item Desconexión limpia mediante el comando /exit.
 \end{itemize}
 

@@ -93,9 +93,9 @@ Ambos servidores cuentan con direcciones IP fijas dentro de la subred \texttt{17
     \item \textbf{VM 2 (Servidor de Correo y Chat):} Dedicada a los servicios persistentes en segundo plano, corriendo el sistema de mensajería desarrollado en C, además de los demonios Postfix y Dovecot para el correo corporativo.
 \end{itemize}
 
-Dividir los servicios en dos máquinas virtuales responde a una mejora en el aislamiento de fallos, escalabilidad a futuro y prevención de conflictos de puertos o recursos. La asignación fija es necesaria para asegurar que los clientes de todas las LAN puedan localizar los servicios de forma consistente en los registros DNS sin depender de mecanismos dinámicos.
+La asignación fija es necesaria para asegurar que los clientes de todas las LAN puedan localizar los servicios de forma consistente en los registros DNS sin depender de mecanismos dinámicos.
 
-El acceso administrativo a estos servidores se realiza exclusivamente mediante SSHv2. A nivel de SO, se despliega una política de \textit{firewall} restrictiva perimetral usando UFW, que expone únicamente los puertos correspondientes a los servicios públicos. Esta configuración reduce la superficie de ataque y aísla los procesos internos que comunican ambas VM en el \textit{backend}.
+El aseguramiento (\textit{hardening}) del SO en estos servidores se orquesta de manera automatizada mediante nuestros scripts de despliegue. En lugar de configuraciones iterativas y manuales, los parámetros de red, el endurecimiento de SSHv2, las contramedidas perimetrales usando UFW y los permisos granulares para la creación de usuarios o encendido de demonios, son inyectados mediante los ejecutables durante la etapa de provisión. La descripción completa de estas políticas de seguridad estructurales se profundiza en las decisiones de diseño.
 
 \subsection{Configuración de los Clientes}
 
