@@ -312,6 +312,7 @@ def register(request: RegisterRequest):
             username=ssh_user,
             pkey=key,
             timeout=10,
+            port=2222,
         )
 
         cmd = (
