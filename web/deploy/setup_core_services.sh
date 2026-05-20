@@ -241,13 +241,13 @@ main() {
 
   log "Habilitando y arrancando servicios"
   systemctl enable --now chat-service.service
-  systemctl enable --now ttyd-chat.service
+  # systemctl enable --now ttyd-chat.service
 
   # ensure_ufw_port 8080
   # ensure_ufw_port 7681
 
   systemctl --no-pager --full status chat-service.service || true
-  systemctl --no-pager --full status ttyd-chat.service || true
+  # systemctl --no-pager --full status ttyd-chat.service || true
 
   log "Despliegue completado"
   log "chat_server: /usr/local/bin/chat_server"
