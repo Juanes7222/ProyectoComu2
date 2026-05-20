@@ -149,3 +149,46 @@ la interfaz de terminal para interactuar con el sistema. El soporte de historial
 local, listado de usuarios conectados y salas de chat se valida directamente
 sobre la conectividad establecida entre los segmentos de la red.
 
+\subsection{Conexiones Físicas (Interfaces)}
+
+La tabla~\ref{tab:conexiones} detalla todas las conexiones físicas entre dispositivos, especificando los puertos utilizados en cada extremo de la conexión. Esta información es esencial para la instalación y validación del cableado en el despliegue práctico de la topología.
+
+\begin{table}[H]
+\centering
+\caption{Conexiones físicas y mapeo de interfaces}
+\label{tab:conexiones}
+\begin{tabularx}{\textwidth}{l l l}
+\toprule
+Dispositivo Origen & Puerto Origen & Dispositivo Destino \& Puerto Destino \\
+\midrule
+\multicolumn{3}{c}{\textbf{LAN 1 (Sede A)}} \\
+\midrule
+PC1-1 & Fa0 & SW-LAN1 (Fa0/1) \\
+PC1-2 & Fa0 & SW-LAN1 (Fa0/2) \\
+SW-LAN1 & G0/1 & Router Sede A (G0/0) \\
+\midrule
+\multicolumn{3}{c}{\textbf{LAN 2 (Sede A)}} \\
+\midrule
+PC2-1 & Fa0 & SW-LAN2 (Fa0/1) \\
+PC2-2 & Fa0 & SW-LAN2 (Fa0/2) \\
+SW-LAN2 & G0/1 & Router Sede A (G0/1) \\
+\midrule
+\multicolumn{3}{c}{\textbf{LAN 3 (Sede B)}} \\
+\midrule
+PC3-1 & Fa0 & SW-LAN3 (Fa0/1) \\
+PC3-2 & Fa0 & SW-LAN3 (Fa0/2) \\
+SW-LAN3 & G0/1 & Router Sede B (G0/0) \\
+\midrule
+\multicolumn{3}{c}{\textbf{LAN 4 - Servidores (Sede B)}} \\
+\midrule
+Servidor Web & Fa0 & SW-LAN4 (Fa0/1) \\
+Servidor Correo/Chat & Fa0 & SW-LAN4 (Fa0/2) \\
+SW-LAN4 & G0/1 & Router Sede B (G0/1) \\
+\midrule
+\multicolumn{3}{c}{\textbf{Enlace entre Sedes}} \\
+\midrule
+Router Sede A & Serial 0/0/0 & Router Sede B (Serial 0/0/0) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
