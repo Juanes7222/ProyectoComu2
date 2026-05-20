@@ -140,7 +140,7 @@ create_provider(){
 
   # Instalar script de provisión
   local provision_script_source provision_script_dest
-  provision_script_source="$sdir/../../created_mail_user.sh"
+  provision_script_source="$sdir/../../create_mail_user.sh"
   provision_script_dest="/usr/local/sbin/create_mail_user.sh"
 
   [[ -f "$provision_script_source" ]] || \
