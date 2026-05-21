@@ -13,22 +13,20 @@ criterio y se registra el estado final de la validación.
 Se accedió al Router de la sede A y se ejecutó el comando \texttt{show ip interface brief}
 para validar las direcciones IPv4.
 
-\begin{verbatim}
-Router1# show ip interface brief
-Interface          IP-Address      OK? Method Status                Protocol
-GigabitEthernet0/0 172.16.202.5    YES NVRAM  up                    up
-GigabitEthernet0/1 172.16.202.6    YES NVRAM  up                    up
-\end{verbatim}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/IPv4 Router SedeA.png}
+\end{figure}
 
 \textbf{Validación:}
 
 \begin{itemize}
-\item GigabitEthernet0/0 conecta a LAN 1: 172.16.202.5  (coincide tabla~\ref{tab:ipv4})
-\item GigabitEthernet0/1 conecta a LAN 2: 172.16.202.6  (coincide tabla~\ref{tab:ipv4})
+\item GigabitEthernet0/0 conecta a LAN 1: 172.16.192.1  (coincide tabla~\ref{tab:ipv4})
+\item GigabitEthernet0/1 conecta a LAN 2: 172.16.196.1 (coincide tabla~\ref{tab:ipv4})
 \item Todas las interfaces están \texttt{up}
 \end{itemize}
 
-\textbf{Resultado:} \textbf{PASÓ} --- Todas las direcciones IPv4 coinciden con el plan.
+\textbf{Resultado:} \textbf{PASÓ} $ \rightarrow $ Todas las direcciones IPv4 coinciden con el plan.
 
 \subsubsection{Resultado Prueba 1.2: Validación de Asignación IPv6}
 
@@ -36,51 +34,14 @@ GigabitEthernet0/1 172.16.202.6    YES NVRAM  up                    up
 
 Se ejecutó \texttt{show ipv6 interface brief} en el router.
 
-\begin{verbatim}
-Router1# show ipv6 interface brief
-GigabitEthernet0/0        [up/up]
-    FE80::1
-    2001:DBE:BEF9:1::1
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/IPv6 Router SedeA.png}
+\end{figure}
 
-GigabitEthernet0/1        [up/up]
-    FE80::1
-    2001:DBE:BEF9:2::1
-\end{verbatim}
-
-\textbf{Validación:}
 
 Todas las direcciones globales coinciden con tabla~\ref{tab:ipv6}:
-\begin{itemize}
-\item LAN 1: 2001:DBE:BEF9:1::1 
-\item LAN 2: 2001:DBE:BEF9:2::1 
-\item LAN 3: 2001:DBE:BEF9:3::1 
-\item Enlace R1-R2: 2001:DBE:BEF9:FF01::1 
-\end{itemize}
 
-En un cliente de LAN 1 se ejecutó \texttt{ipconfig}:
-
-\begin{verbatim}
-C:\> ipconfig
-
-Ethernet adapter Ethernet:
-   Connection-specific DNS Suffix  : .local
-   IPv6 Address                     : 2001:dbe:bef9:1::a8c
-   Link-Local IPv6 Address          : fe80::a8c
-   IPv4 Address                     : 172.16.192.50
-   Subnet Mask                      : 255.255.252.0
-   Default Gateway                  : 172.16.192.1
-\end{verbatim}
-
-\textbf{Validación:}
-
-Cliente en LAN 1 tiene:
-\begin{itemize}
-\item Dirección IPv4: 172.16.192.50 dentro del rango de LAN 1 
-\item Dirección IPv6: 2001:dbe:bef9:1::a8c que comienza con prefijo correcto 
-\item El último hextet (a8c) corresponde a la representación del MAC 
-\end{itemize}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- IPv6 configurado correctamente en router y SLAAC funciona en clientes.
 
 \subsubsection{Resultado Prueba 1.3: DHCP en IPv4}
 
@@ -139,10 +100,8 @@ Desde Host en LAN 1 se hizo ping a Host en LAN 2:
     \includegraphics[width=1\textwidth]{images/test/LAN1-LAN2.png}
 \end{figure}
 
-\textbf{Trazabilidad de ruta:}
 
-
-\textbf{Resultado:} \textbf{ PASÓ} $\rightarrow$ El ping entre LANs funciona correctamente.
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ El ping entre LANs funciona correctamente.
 
 \subsubsection{Resultado Prueba 2.3: Ping IPv6}
 
@@ -150,22 +109,12 @@ Desde Host en LAN 1 se hizo ping a Host en LAN 2:
 
 Desde cliente en LAN 1 se hizo ping IPv6 a cliente en LAN 2:
 
-\begin{verbatim}
-C:\> ping 2001:dbe:bef9:2::ff
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/Ping IPv6 LAN2.png}
+\end{figure}
 
-Pinging 2001:dbe:bef9:2::ff with 32 bytes of data:
-Reply from 2001:dbe:bef9:2::ff: bytes=32 time=6ms TTL=63
-Reply from 2001:dbe:bef9:2::ff: bytes=32 time=5ms TTL=63
-Reply from 2001:dbe:bef9:2::ff: bytes=32 time=6ms TTL=63
-Reply from 2001:dbe:bef9:2::ff: bytes=32 time=5ms TTL=63
-
-Ping statistics for 2001:dbe:bef9:2::ff:
-    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)
-    Approximate round trip times in ms:
-    Minimum = 5ms, Maximum = 6ms, Average = 5ms
-\end{verbatim}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- IPv6 routing funciona correctamente.
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ IPv6 routing funciona correctamente.
 
 
 \subsection{Resultados de Pruebas de Servicios}
@@ -191,8 +140,14 @@ Ping statistics for 2001:dbe:bef9:2::ff:
 
 \textbf{Ejecución:}
 
+Se envió un correo desde cliente en LAN 1 a una cuenta configurada en el servidor de correo. Luego se verificó en la LAN3.
 
-\textbf{Resultado:} \textbf{ PASÓ} --- Servicios de correo SMTP/IMAP funcionales.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/correo recibido.png}
+\end{figure}
+
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ Servicios de correo SMTP/IMAP funcionales.
 
 \subsubsection{Resultado Prueba 3.3: Servidor de Chat}
 
@@ -215,42 +170,20 @@ LISTEN  0  128  [::]:8080  [::]:*
 
 Cliente 1 desde LAN 1:
 
-\begin{verbatim}
-C:\chat-client> ./chat-client 172.16.202.3 8080
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/chat LAN1.png}
+\end{figure}
 
-Connected to chat server.
-Welcome to Chat Room!
-> /list
-Users online: [1/1] Client1
-> Hello from Client 1
-\end{verbatim}
-
-Cliente 2 desde LAN 2:
-
-\begin{verbatim}
-C:\chat-client> ./chat-client 172.16.202.3 8080
-
-Connected to chat server.
-Welcome to Chat Room!
-> /list
-Users online: [2/2] Client1, Client2
-> Hello from Client 2
-\end{verbatim}
-
-En Cliente 1:
-
-\begin{verbatim}
-[Client2]: Hello from Client 2
-\end{verbatim}
-
-\textbf{Validación:}
+Cliente 2 desde LAN 3:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{images/test/prueba chat.png}
+    \includegraphics[width=1\textwidth]{images/test/chat lan 3.png}
 \end{figure}
 
-\textbf{Resultado:} \textbf{ PASÓ} --- Servidor de chat operativo.
+
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ Servidor de chat operativo.
 
 \subsection{Resultados de Pruebas de Seguridad}
 
