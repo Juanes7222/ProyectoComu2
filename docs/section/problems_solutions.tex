@@ -30,35 +30,9 @@ Router1# show run | include ssh
 ip ssh version 2
 ip ssh time-out 120
 line vty 0 4
- transport input telnet      <--- Solo Telnet habilitado
 \end{verbatim}
 
-\textbf{Causa Raíz:}
-
-El transporte SSH no estaba habilitado en las líneas VTY. Solo Telnet estaba
-activo por defecto.
-
-\textbf{Solución Aplicada:}
-
-\begin{verbatim}
-Router1# configure terminal
-Router1(config)# line vty 0 4
-Router1(config-line)# transport input ssh
-Router1(config-line)# end
-Router1# write memory
-\end{verbatim}
-
-\textbf{Validación Posterior:}
-
-\begin{verbatim}
-C:\> ssh admin@172.16.192.1
-
-admin@172.16.192.1's password: ********
-Router1>
-\end{verbatim}
-
-\textbf{Estado:} \textbf{ RESUELTO}
-
+La causa era la seguridad usada en los routers Cisco era deficiente con respecto a lo que Windows 10 soporta, por lo que se necesitaba configurar un cifrado más fuerte o iniciar ssh con un programa como PuTTy.
 
 \subsubsection{Problema 2: DHCP No Asigna Direcciones en LAN 2}
 
@@ -98,12 +72,12 @@ los switches reportaban que el puerto estaba down.
 
 \textbf{Causa Raíz:}
 
-El cable Ethernet entre el router y el switch de LAN 2 estaba desconectado o
+El cable Ethernet entre el router y el switch de LAN 2 estaba
 defectuoso. El puerto del router mostraba \texttt{administratively down}.
 
 \textbf{Solución Aplicada:}
 
-1. Reemplazar el cable Ethernet (Cat 6A)
+1. Reemplazar el cable Ethernet
 2. Verificar que el puerto estuviera activo:
 
 \begin{verbatim}
@@ -117,176 +91,11 @@ Router1(config-if)# end
 \begin{verbatim}
 C:\> ipconfig /renew
 
-IPv4 Address                     : 172.16.196.75
+IPv4 Address                     : 172.16.196.12
 Subnet Mask                      : 255.255.252.0
 Default Gateway                  : 172.16.196.1
 DHCP Server                      : 172.16.196.1
 \end{verbatim}
-
-\textbf{Estado:} \textbf{ RESUELTO}
-
-
-\subsubsection{Problema 3: OSPFv3 No Converge}
-
-\textbf{Descripción:}
-
-Después de configurar OSPFv3, las rutas IPv6 no se propagaban entre routers.
-Los clientes en diferentes LANs no podían hacer ping IPv6.
-
-\textbf{Síntomas:}
-
-\begin{verbatim}
-Router1# show ipv6 route ospf
-(sin salida - no hay rutas OSPF aprendidas)
-
-C:\> ping 2001:dbe:bef9:2::100
-Destination unreachable.
-\end{verbatim}
-
-\textbf{Diagnóstico:}
-
-Se verificó el estado de OSPFv3:
-
-\begin{verbatim}
-Router1# show ipv6 ospf neighbor
-
-(sin salida - sin vecinos)
-
-Router1# show ipv6 ospf interface brief
-
-Interface      ProcId   Area      Cost   State Nbrs F/C
-Gi0/3          1        0         100    DR    0/0   <--- Sin vecinos
-\end{verbatim}
-
-El router no tenía adyacencia OSPF con su vecino en el enlace de interconexión.
-
-\textbf{Causa Raíz:}
-
-Se descubrió que en el archivo de configuración de OSPFv3, la dirección del
-Router ID no estaba asignada. OSPFv3 requiere un Router ID explícito (a diferencia
-de OSPFv2 que puede usar la dirección IPv4 más alta).
-
-\begin{verbatim}
-Router1# show run | include "ipv6 router"
-(sin salida)
-\end{verbatim}
-
-\textbf{Solución Aplicada:}
-
-\begin{verbatim}
-Router1# configure terminal
-Router1(config)# ipv6 router ospf 1
-Router1(config-rtr)# router-id 1.1.1.1
-Router1(config-rtr)# end
-Router1# write memory
-\end{verbatim}
-
-Luego se verificó que las interfaces tuvieran habilitado OSPFv3:
-
-\begin{verbatim}
-Router1(config)# interface GigabitEthernet0/3
-Router1(config-if)# ipv6 ospf 1 area 0
-Router1(config-if)# end
-\end{verbatim}
-
-Se realizó el mismo procedimiento en Router 2.
-
-\textbf{Validación Posterior:}
-
-\begin{verbatim}
-Router1# show ipv6 ospf neighbor
-
-Neighbor ID     Pri   State           Dead Time   Address         Interface
-2.2.2.2         1     FULL/ -         00:00:35    FE80::2         Gi0/3
-
-Router1# show ipv6 route ospf
-
-O   2001:DBE:BEF9:2::/64 [110/11] via FE80::2, Gi0/3
-O   2001:DBE:BEF9:3::/64 [110/21] via FE80::2, Gi0/3
-\end{verbatim}
-
-\textbf{Estado:} \textbf{ RESUELTO}
-
-
-\subsection{Problemas de Servicios}
-
-\subsubsection{Problema 4: Servidor de Correo No Recibe Conexiones}
-
-\textbf{Descripción:}
-
-El puerto 25 (SMTP) del servidor de correo no responde. Los clientes no pueden
-conectarse para enviar correo.
-
-\textbf{Síntomas:}
-
-\begin{verbatim}
-C:\> telnet 172.16.202.2 25
-
-Connecting To 172.16.202.2...Could not open connection to the host,
-on port 25: Connect failed
-\end{verbatim}
-
-\textbf{Diagnóstico:}
-
-Se SSH'd al servidor Linux y se verificó que Postfix estuviera corriendo:
-
-\begin{verbatim}
-ubuntu@server:~$ sudo service postfix status
-
-postfix is running   <--- Servicio activo
-
-ubuntu@server:~$ sudo netstat -tuln | grep 25
-
-(sin salida)   <--- Puerto 25 no está escuchando
-\end{verbatim}
-
-Se revisó el log de Postfix:
-
-\begin{verbatim}
-ubuntu@server:~$ sudo tail -n 20 /var/log/mail.log
-
-May 19 10:30:15 server postfix/master[12345]: fatal: bind port 25: Permission denied
-\end{verbatim}
-
-\textbf{Causa Raíz:}
-
-El demonio de Postfix se estaba ejecutando bajo usuario \texttt{postfix} (no-root),
-el cual no tiene permiso para escuchar en puertos menores a 1024. Esto ocurrió
-porque se instaló bajo un usuario sin permisos suficientes.
-
-\textbf{Solución Aplicada:}
-
-Reconfigurar Postfix para ejecutarse con permisos apropiados:
-
-\begin{verbatim}
-ubuntu@server:~$ sudo systemctl stop postfix
-ubuntu@server:~$ sudo chown -R postfix:postfix /var/spool/postfix
-ubuntu@server:~$ sudo systemctl start postfix
-\end{verbatim}
-
-Se verificó que Postfix estuviera en el grupo \texttt{root} o tuviera permisos
-de binding:
-
-\begin{verbatim}
-ubuntu@server:~$ sudo usermod -a -G root postfix
-ubuntu@server:~$ sudo systemctl restart postfix
-\end{verbatim}
-
-\textbf{Validación Posterior:}
-
-\begin{verbatim}
-ubuntu@server:~$ sudo netstat -tuln | grep 25
-
-tcp        0    0 0.0.0.0:25             0.0.0.0:*      LISTEN
-
-C:\> telnet 172.16.202.2 25
-
-Trying 172.16.202.2...
-Connected to 172.16.202.2.
-220 mail.grupo1.local ESMTP Postfix
-\end{verbatim}
-
-\textbf{Estado:} \textbf{ RESUELTO}
 
 
 \subsection{Problemas de Seguridad}
@@ -340,72 +149,4 @@ C:\> ssh admin@172.16.192.1
 admin@172.16.192.1's password: ****
 Router1>
 \end{verbatim}
-
-\textbf{Estado:} \textbf{ RESUELTO}
-
-
-\subsubsection{Problema 7: Firewall Bloqueaba Servidor Web IPv6}
-
-\textbf{Descripción:}
-
-Aunque el servidor web funcionaba con IPv4, no era accesible por IPv6.
-
-\textbf{Síntomas:}
-
-\begin{verbatim}
-C:\> curl "http://[2001:dbe:bef9:10::1]/"
-
-curl: (28) Connection timed out
-\end{verbatim}
-
-\textbf{Diagnóstico:}
-
-Se verificó que Nginx estuviera escuchando en IPv6:
-
-\begin{verbatim}
-ubuntu@server:~$ sudo netstat -tuln | grep 80
-
-tcp        0    0 0.0.0.0:80          0.0.0.0:*      LISTEN
-tcp6       0    0 [::]:80             [::]:*         LISTEN   <--- IPv6 escuchando
-\end{verbatim}
-
-Se verificó que UFW (firewall) permitía puerto 80:
-
-\begin{verbatim}
-ubuntu@server:~$ sudo ufw status
-
-Status: active
-To                         Action      From
---                         ------      ----
-80/tcp                     ALLOW       Anywhere
-\end{verbatim}
-
-Sin embargo, solo había regla para IPv4.
-
-\textbf{Causa Raíz:}
-
-UFW necesita reglas explícitas para IPv6. La regla \texttt{80/tcp} no cubría
-\texttt{80/tcp6}.
-
-\textbf{Solución Aplicada:}
-
-\begin{verbatim}
-ubuntu@server:~$ sudo ufw allow 80/tcp
-ubuntu@server:~$ sudo ufw allow 80/tcp6
-ubuntu@server:~$ sudo ufw reload
-\end{verbatim}
-
-\textbf{Validación Posterior:}
-
-\begin{verbatim}
-C:\> curl "http://[2001:dbe:bef9:10::1]/"
-
-<!DOCTYPE html>
-<html>
-  <head><title>Bienvenido a Comunicaciones II</title></head>
-  ...
-</html>
-\end{verbatim}
-
-\textbf{Estado:} \textbf{ RESUELTO}
 

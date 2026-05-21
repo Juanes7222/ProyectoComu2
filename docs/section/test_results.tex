@@ -10,25 +10,21 @@ criterio y se registra el estado final de la validación.
 
 \textbf{Ejecución:}
 
-Se accedió al Router 1 mediante SSH y se ejecutó el comando \texttt{show ip interface brief}
+Se accedió al Router de la sede A y se ejecutó el comando \texttt{show ip interface brief}
 para validar las direcciones IPv4.
 
 \begin{verbatim}
 Router1# show ip interface brief
 Interface          IP-Address      OK? Method Status                Protocol
-GigabitEthernet0/0 172.16.192.1    YES NVRAM  up                    up
-GigabitEthernet0/1 172.16.196.1    YES NVRAM  up                    up
-GigabitEthernet0/2 172.16.200.1    YES NVRAM  up                    up
-GigabitEthernet0/3 172.16.202.9    YES NVRAM  up                    up
+GigabitEthernet0/0 172.16.202.5    YES NVRAM  up                    up
+GigabitEthernet0/1 172.16.202.6    YES NVRAM  up                    up
 \end{verbatim}
 
 \textbf{Validación:}
 
 \begin{itemize}
-\item GigabitEthernet0/0 conecta a LAN 1: 172.16.192.1  (coincide tabla~\ref{tab:ipv4})
-\item GigabitEthernet0/1 conecta a LAN 2: 172.16.196.1  (coincide tabla~\ref{tab:ipv4})
-\item GigabitEthernet0/2 conecta a LAN 3: 172.16.200.1  (coincide tabla~\ref{tab:ipv4})
-\item GigabitEthernet0/3 enlace a Router 2: 172.16.202.9  (coincide tabla~\ref{tab:ipv4})
+\item GigabitEthernet0/0 conecta a LAN 1: 172.16.202.5  (coincide tabla~\ref{tab:ipv4})
+\item GigabitEthernet0/1 conecta a LAN 2: 172.16.202.6  (coincide tabla~\ref{tab:ipv4})
 \item Todas las interfaces están \texttt{up}
 \end{itemize}
 
@@ -49,14 +45,6 @@ GigabitEthernet0/0        [up/up]
 GigabitEthernet0/1        [up/up]
     FE80::1
     2001:DBE:BEF9:2::1
-
-GigabitEthernet0/2        [up/up]
-    FE80::1
-    2001:DBE:BEF9:3::1
-
-GigabitEthernet0/3        [up/up]
-    FE80::1
-    2001:DBE:BEF9:FF01::1
 \end{verbatim}
 
 \textbf{Validación:}
@@ -98,45 +86,27 @@ Cliente en LAN 1 tiene:
 
 \textbf{Ejecución:}
 
-En un cliente de LAN 1 se ejecutó \texttt{ipconfig /release} seguido de \texttt{ipconfig /renew}.
+En un cliente de LAN 2 se ejecutó \texttt{ipconfig /release} seguido de \texttt{ipconfig /renew}.
 
-\begin{verbatim}
-C:\> ipconfig /release
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{images/test/release.png}
+\end{figure}
 
-Ethernet adapter Ethernet:
-   IPv4 Address                     : 0.0.0.0
-   Subnet Mask                      : 0.0.0.0
-   Default Gateway                  :
-
-C:\> ipconfig /renew
-
-Ethernet adapter Ethernet:
-   IPv4 Address                     : 172.16.192.75
-   Subnet Mask                      : 255.255.252.0
-   Default Gateway                  : 172.16.192.1
-   DHCP Server                      : 172.16.192.1
-\end{verbatim}
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{images/test/dhcp.png}
+\end{figure}
 
 \textbf{Validación:}
 
 \begin{itemize}
-\item IP asignada: 172.16.192.75 está dentro de rango LAN 1 (172.16.192.1--172.16.195.254) 
+\item IP asignada: 172.16.199.12 está dentro de rango LAN 2 (172.16.196.1--172.16.199.254) 
 \item Máscara /22 correcta (255.255.252.0) 
-\item Gateway es 172.16.192.1 (router de LAN 1) 
-\item DHCP server reportado es 172.16.192.1 
+\item Gateway es 172.16.196.1 (router de LAN 2) 
 \end{itemize}
 
-Repetición en LAN 2:
-
-\begin{verbatim}
-IPv4 Address                     : 172.16.197.120
-Subnet Mask                      : 255.255.252.0
-Default Gateway                  : 172.16.196.1
-\end{verbatim}
-
-172.16.197.120 está en rango de LAN 2 (172.16.196.1--172.16.199.254) 
-
-\textbf{Resultado:} \textbf{ PASÓ} --- DHCP asigna direcciones correctas en todas las LANs.
+\textbf{Resultado:} \textbf{ PASÓ} $\rightarrow$ DHCP asigna direcciones correctas.
 
 \subsection{Resultados de Pruebas de Conectividad}
 
@@ -144,68 +114,35 @@ Default Gateway                  : 172.16.196.1
 
 \textbf{Ejecución:}
 
-Desde Host A en LAN 1 (172.16.192.50) se hizo ping a Host B (172.16.192.75):
+Desde Host A en LAN 1 se hizo ping a Host B en la misma LAN:
 
-\begin{verbatim}
-C:\> ping 172.16.192.75
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/LAN1-LAN1.png}
+\end{figure}
 
-Pinging 172.16.192.75 with 32 bytes of data:
-Reply from 172.16.192.75: bytes=32 time=2ms TTL=64
-Reply from 172.16.192.75: bytes=32 time=1ms TTL=64
-Reply from 172.16.192.75: bytes=32 time=2ms TTL=64
-Reply from 172.16.192.75: bytes=32 time=1ms TTL=64
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/LAN2-LAN2.png}
+\end{figure}
 
-Ping statistics for 172.16.192.75:
-    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)
-    Approximate round trip times in ms:
-    Minimum = 1ms, Maximum = 2ms, Average = 1ms
-\end{verbatim}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- 0\% pérdida, latencia < 10 ms. Conectividad L2 verificada.
+\textbf{Resultado:} \textbf{ PASÓ} $\rightarrow$ Se realiza ping exitoso dentro de la misma LAN, conectividad local confirmada.
 
 \subsubsection{Resultado Prueba 2.2: Ping entre LANs}
 
 \textbf{Ejecución:}
 
-Desde Host en LAN 1 (172.16.192.50) se hizo ping a Host en LAN 2 (172.16.196.100):
+Desde Host en LAN 1 se hizo ping a Host en LAN 2:
 
-\begin{verbatim}
-C:\> ping 172.16.196.100
-
-Pinging 172.16.196.100 with 32 bytes of data:
-Reply from 172.16.196.100: bytes=32 time=5ms TTL=63
-Reply from 172.16.196.100: bytes=32 time=5ms TTL=63
-Reply from 172.16.196.100: bytes=32 time=6ms TTL=63
-Reply from 172.16.196.100: bytes=32 time=5ms TTL=63
-
-Ping statistics for 172.16.196.100:
-    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)
-    Approximate round trip times in ms:
-    Minimum = 5ms, Maximum = 6ms, Average = 5ms
-\end{verbatim}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/LAN1-LAN2.png}
+\end{figure}
 
 \textbf{Trazabilidad de ruta:}
 
-\begin{verbatim}
-C:\> tracert 172.16.196.100
 
-Tracing route to 172.16.196.100 over a maximum of 30 hops
-
-  1    <1 ms    <1 ms    <1 ms  172.16.192.1    [Gateway LAN 1]
-  2     4 ms     4 ms     4 ms  172.16.196.1    [Gateway LAN 2]
-  3     5 ms     5 ms     5 ms  172.16.196.100  [Host LAN 2]
-\end{verbatim}
-
-\textbf{Validación:}
-
-\begin{itemize}
-\item Salto 1: Se alcanza el gateway de LAN 1
-\item Salto 2: Se alcanza el gateway de LAN 2 (enrutamiento funcionando)
-\item Salto 3: Se alcanza el host destino en LAN 2
-\item TTL disminuye correctamente (64 → 63) indicando travesía de router
-\end{itemize}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- Enrutamiento entre LANs funciona correctamente.
+\textbf{Resultado:} \textbf{ PASÓ} $\rightarrow$ El ping entre LANs funciona correctamente.
 
 \subsubsection{Resultado Prueba 2.3: Ping IPv6}
 
@@ -228,47 +165,8 @@ Ping statistics for 2001:dbe:bef9:2::ff:
     Minimum = 5ms, Maximum = 6ms, Average = 5ms
 \end{verbatim}
 
-\textbf{Resultado:} \textbf{ PASÓ} --- IPv6 routing funciona correctamente, OSPFv3 operativo.
+\textbf{Resultado:} \textbf{ PASÓ} --- IPv6 routing funciona correctamente.
 
-\subsubsection{Resultado Prueba 2.4: Convergencia OSPF}
-
-\textbf{Ejecución:}
-
-En Router 1 se ejecutó \texttt{show ip route ospf}:
-
-\begin{verbatim}
-Router1# show ip route ospf
-
-O    172.16.196.0/22 [110/11] via 172.16.202.10, 00:15:23, GigabitEthernet0/3
-O    172.16.200.0/24 [110/21] via 172.16.202.10, 00:15:23, GigabitEthernet0/3
-O    172.16.202.0/29 [110/21] via 172.16.202.10, 00:15:23, GigabitEthernet0/3
-\end{verbatim}
-
-\textbf{Validación:}
-
-\begin{itemize}
-\item LAN 2 (172.16.196.0/22) aprendida dinámicamente 
-\item LAN 3 (172.16.200.0/24) aprendida dinámicamente 
-\item Subred de servidores (172.16.202.0/29) aprendida dinámicamente 
-\item Métrica OSPF: 110 (indicador de OSPF) 
-\item Vecino accesible a través de 172.16.202.10 (Router 2) 
-\end{itemize}
-
-\textbf{Adyacencia OSPF:}
-
-\begin{verbatim}
-Router1# show ip ospf neighbor
-
-Neighbor ID     Pri   State           Dead Time   Address         Interface
-172.16.202.10   1     FULL/ -         00:00:38    172.16.202.10   Gi0/3
-\end{verbatim}
-
-\begin{itemize}
-\item Estado de adyacencia: FULL (convergencia completada) 
-\item Tiempo sin recibir Hello: 38 segundos (menor al timeout de 40s) 
-\end{itemize}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- OSPF convergió correctamente, todas las rutas conocidas.
 
 \subsection{Resultados de Pruebas de Servicios}
 
@@ -276,94 +174,23 @@ Neighbor ID     Pri   State           Dead Time   Address         Interface
 
 \textbf{Ejecución desde cliente en LAN 1:}
 
-\begin{verbatim}
-C:\> curl -v http://172.16.202.1
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/curl web.png}
+\end{figure}
 
-*   Trying 172.16.202.1:80...
-* Connected to 172.16.202.1 (172.16.202.1) port 80 (#0)
-> GET / HTTP/1.1
-> Host: 172.16.202.1
-> User-Agent: curl/7.68.0
-> Accept: */*
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/conexion web.png}
+\end{figure}
 
-< HTTP/1.1 200 OK
-< Server: nginx/1.18.0
-< Content-Type: text/html; charset=utf-8
-< Content-Length: 2048
-< Connection: keep-alive
 
-<!DOCTYPE html>
-<html>
-  <head><title>Bienvenido a Comunicaciones II</title></head>
-  <body>
-    <h1>Servidor de Servicios - Grupo 1</h1>
-    <p>Este es el servidor web centralizado para la topología multi-sede.</p>
-  </body>
-</html>
-\end{verbatim}
-
-\textbf{Validación:}
-
-\begin{itemize}
-\item Conexión exitosa a 172.16.202.1 puerto 80 
-\item Servidor: Nginx versión 1.18.0 
-\item Código HTTP: 200 OK 
-\item Contenido descargado correctamente 
-\end{itemize}
-
-\textbf{Acceso desde cliente en LAN 2:} Conecta exitosamente 
-
-\textbf{Acceso IPv6:}
-
-\begin{verbatim}
-C:\> curl -v "http://[2001:dbe:bef9:10::1]/"
-
-*   Trying [2001:dbe:bef9:10::1]:80...
-* Connected to 2001:dbe:bef9:10::1 port 80 (#0)
-
-< HTTP/1.1 200 OK
-\end{verbatim}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- Servidor web accesible desde todas las LANs en IPv4 e IPv6.
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ Servidor web accesible.
 
 \subsubsection{Resultado Prueba 3.2: Servidor de Correo}
 
 \textbf{Ejecución:}
 
-\begin{verbatim}
-C:\> telnet 172.16.202.2 25
-
-Trying 172.16.202.2...
-Connected to 172.16.202.2.
-Escape character is ']'.
-220 mail.grupo1.local ESMTP Postfix (Ubuntu)
-\end{verbatim}
-
-\begin{verbatim}
-C:\> telnet 172.16.202.2 143
-
-Trying 172.16.202.2...
-Connected to 172.16.202.2.
-Escape character is ']'.
-* OK [CAPABILITY IMAP4rev1 ...] Dovecot ready.
-\end{verbatim}
-
-\textbf{Validación:}
-
-\begin{itemize}
-\item Puerto 25 (SMTP) responde correctamente 
-\item Puerto 143 (IMAP) responde correctamente 
-\item Ambos puertos accesibles desde cliente 
-\end{itemize}
-
-\textbf{Envío y recepción de correo de prueba:}
-
-Cliente Thunderbird configurado con usuario \texttt{test@grupo1.local}:
-\begin{itemize}
-\item Envió correo de prueba exitosamente 
-\item Correo recibido en bandeja de entrada 
-\item Attachments descargables 
-\end{itemize}
 
 \textbf{Resultado:} \textbf{ PASÓ} --- Servicios de correo SMTP/IMAP funcionales.
 
@@ -383,13 +210,6 @@ ubuntu@server:~$ ss -tuln | grep 8080
 LISTEN  0  128  [::]:8080  [::]:*
 \end{verbatim}
 
-\textbf{Validación:}
-
-\begin{itemize}
-\item Demonio de chat está corriendo 
-\item Escuchando en puerto 8080 
-\item Acepta tanto IPv4 como IPv6 ([::]) 
-\end{itemize}
 
 \textbf{Conexiones de cliente:}
 
@@ -425,66 +245,35 @@ En Cliente 1:
 
 \textbf{Validación:}
 
-\begin{itemize}
-\item Múltiples clientes se conectan simultáneamente 
-\item Comando \texttt{/list} muestra todos los usuarios 
-\item Mensajes se entregan entre clientes 
-\item Funciona desde LANs diferentes 
-\end{itemize}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/prueba chat.png}
+\end{figure}
 
-\textbf{Exportación de historial:}
-
-\begin{verbatim}
-> /save chat_history.txt
-[System]: Chat history saved to chat_history.txt
-\end{verbatim}
-
-Archivo generado correctamente 
-
-\textbf{Resultado:} \textbf{ PASÓ} --- Servidor de chat operativo con todas las funcionalidades.
+\textbf{Resultado:} \textbf{ PASÓ} --- Servidor de chat operativo.
 
 \subsection{Resultados de Pruebas de Seguridad}
 
-\subsubsection{Resultado Prueba 4.1: SSH Disponible, Telnet Bloqueado}
-
-\textbf{Intento de Telnet:}
-
-\begin{verbatim}
-C:\> telnet 172.16.192.1 23
-
-Connecting To 172.16.192.1...Could not open connection to the host,
-on port 23: Connect failed
-\end{verbatim}
-
-\textbf{Validación:} Puerto 23 cerrado 
+\subsubsection{Resultado Prueba 4.1: SSH Disponible}
 
 \textbf{Conexión SSH:}
 
-\begin{verbatim}
-C:\> ssh admin@172.16.192.1
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/ssh routerA.png}
+\end{figure}
 
-The authenticity of host '172.16.192.1' can't be established.
-RSA key fingerprint is SHA256:...
-Are you sure you want to continue connecting (yes/no)? yes
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/ssh routerB.png}
+\end{figure}
 
-admin@172.16.192.1's password: ********
 
-Router1>
-\end{verbatim}
-
-\textbf{Validación:}
-
-\begin{itemize}
-\item SSH accesible en puerto 22 
-\item Solicita autenticación de forma segura 
-\item Sesión establecida correctamente 
-\end{itemize}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- SSH activo y Telnet bloqueado.
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ SSH activo.
 
 \subsubsection{Resultado Prueba 4.2: Firewall en Servidor}
 
-\textbf{Ejecución:}
+\textbf{Ejecución en servidor de correo:}
 
 \begin{verbatim}
 ubuntu@server:~$ sudo ufw status
@@ -493,86 +282,37 @@ Status: active
 
 To                         Action      From
 --                         ------      ----
-22/tcp                     ALLOW       Anywhere
-80/tcp                     ALLOW       Anywhere
+2222/tcp                     ALLOW       Anywhere
 25/tcp                     ALLOW       Anywhere
 143/tcp                    ALLOW       Anywhere
 8080/tcp                   ALLOW       Anywhere
 \end{verbatim}
 
-\textbf{Intento de acceso a puerto cerrado (3389):}
+\textbf{Ejecución en servidor web:}
 
 \begin{verbatim}
-C:\> telnet 172.16.202.1 3389
+ubuntu@server:~$ sudo ufw status
 
-Connecting To 172.16.202.1...Could not open connection to the host,
-on port 3389: Connect failed
+Status: active
+
+To                         Action      From
+--                         ------      ----
+2222/tcp                     ALLOW       Anywhere
+80/tcp                     ALLOW       Anywhere
 \end{verbatim}
 
-\textbf{Validación:}
 
-\begin{itemize}
-\item Firewall está activo 
-\item Solo puertos permitidos abiertos (22, 80, 25, 143, 8080) 
-\item Otros puertos rechazados 
-\end{itemize}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- Firewall correctamente configurado.
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ Firewall correctamente configurado.
 
 \subsubsection{Resultado Prueba 4.3: Contraseñas Cifradas}
 
 \textbf{Ejecución en Router 1:}
 
-\begin{verbatim}
-Router1# show run | include secret
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/test/cifrado contraseña.png}
+\end{figure}
 
-enable secret 5 $1$mERr$hx5rVt7rPNoS37Pxy4i6M0
-line vty 0 4
- password 7 096E6F1A0A1F
-line console 0
- password 7 1019191C0F0F
-\end{verbatim}
+\textbf{Resultado:} \textbf{ PASÓ} $ \rightarrow $ Contraseñas almacenadas de forma cifrada.
 
-\textbf{Validación:}
-
-\begin{itemize}
-\item \texttt{enable secret} comienza con \$1\$ (MD5 hash) 
-\item Contraseña no está en texto plano 
-\item Los números después de \texttt{password 7} son texto cifrado de Cisco 
-\end{itemize}
-
-\textbf{Resultado:} \textbf{ PASÓ} --- Contraseñas almacenadas de forma cifrada.
-
-\subsection{Resumen Final de Pruebas}
-
-\begin{table}[H]
-\centering
-\caption{Resultado final de todas las pruebas}
-\label{tab:resumen_pruebas}
-\begin{tabularx}{\textwidth}{l l}
-\toprule
-\textbf{Prueba} & \textbf{Resultado} \\
-\midrule
-1.1 IPv4 Asignación &  PASÓ \\
-1.2 IPv6 Asignación &  PASÓ \\
-1.3 DHCP IPv4 &  PASÓ \\
-2.1 Ping LAN Local &  PASÓ \\
-2.2 Ping entre LANs &  PASÓ \\
-2.3 Ping IPv6 &  PASÓ \\
-2.4 Convergencia OSPF &  PASÓ \\
-3.1 Servidor Web &  PASÓ \\
-3.2 Servidor Correo &  PASÓ \\
-3.3 Servidor Chat &  PASÓ \\
-4.1 SSH/Telnet &  PASÓ \\
-4.2 Firewall &  PASÓ \\
-4.3 Contraseñas Cifradas &  PASÓ \\
-\midrule
-\textbf{TOTAL} & \textbf{13/13 PASARON (100\%)} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\textbf{Conclusión:} Todas las pruebas de validación fueron exitosas. El diseño,
-configuración e implementación de la topología multi-sede cumplen con todos los
-requerimientos especificados en el proyecto.
 

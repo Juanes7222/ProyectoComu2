@@ -7,10 +7,8 @@ doble stack IPv4/IPv6. Se presentan las conclusiones respecto al diseño y
 despliegue, así como las lecciones aprendidas y recomendaciones para futuras
 implementaciones.
 
-\subsection{Conclusiones del Diseño}
-
-\subsubsection{Diseño de Direccionamiento}
-
+\begin{enumerate}
+   \item 
 La estrategia de segmentación jerárquica mediante VLSM en IPv4 demostró ser
 altamente efectiva para maximizar el aprovechamiento del espacio de
 direccionamiento asignado \texttt{172.16.192.0/19}. Al ajustar el prefijo de
@@ -18,43 +16,15 @@ cada subred según los requerimientos reales (LAN 1 y 2 con /22, LAN 3 con /24,
 enlaces con /30), se minimizó el desperdicio de direcciones mientras se
 garantizaba espacio para el crecimiento del 10\% en cada área.
 
-En IPv6, la adopción uniforme del prefijo /64 en todos los segmentos simplificó
-significativamente la configuración y la administración, eliminando la complejidad
-asociada a VLSM en IPv6 e incentivando el uso de SLAAC para autoconfiguración de
-clientes.
 
-La asignación de direcciones diferenciada por tipo de dispositivo---estática
-para infraestructura y servicios, dinámica para usuario final---reflejó las
-mejores prácticas de administración de redes corporativas. Esta aproximación
-facilitó la trazabilidad de equipos críticos y redujo la carga administrativa
-en segmentos con cientos de usuarios.
-
-\subsubsection{Selección de Protocolos}
-
-La elección de OSPF como protocolo de enrutamiento dinámico fue acertada. Su
-convergencia rápida ante cambios en la topología, la extensión nativa a IPv6
-mediante OSPFv3, y la ausencia de limitaciones de saltos (a diferencia de RIP)
-lo hicieron idóneo para una red multi-sede. La operación de toda la topología
-dentro de una única área OSPF (área 0) mantuvo la configuración simple sin
-sacrificar funcionalidad.
-
-El soporte de doble stack mediante la configuración de sockets con familia
-\texttt{AF\_INET6} y la opción \texttt{IPV6\_V6ONLY} deshabilitada permitió
-que los servicios de aplicación (web, correo, chat) operaran en ambas familias
-de protocolos sin duplicar demonio.
-
-\subsubsection{Estrategia de Seguridad}
-
-La implementación de capas de seguridad---contraseñas cifradas en dispositivos,
-SSHv2 para administración remota, firewall restrictivo en servidores---estableció
+\item
+La implementación de capas de seguridad, contraseñas cifradas en dispositivos,
+SSHv2 para administración remota, firewall restrictivo en servidores, estableció
 una defensa en profundidad. La política de denegar por defecto y permitir solo
 puertos críticos redujo significativamente la superficie de ataque, sin afectar
 la operación de los servicios requeridos.
 
-\subsection{Conclusiones del Despliegue}
-
-\subsubsection{Implementación de Servicios}
-
+\item
 Los tres servicios de aplicación (web, correo, chat) se desplegaron exitosamente
 en maquinas virtuales con Linux, una con el servicio web y la otra con los 
 servicios de correo y chat. La selección de software de código abierto
@@ -67,26 +37,18 @@ previas del proyecto, se integró sin complicaciones significativas con la
 infraestructura de red, demostrando la viabilidad de soluciones personalizadas
 en entornos corporativos cuando están bien diseñadas.
 
-\subsubsection{Validación de Requisitos}
-
+\item
 Todas las pruebas de validación fueron exitosas en su primer ciclo de ejecución
-posterior a la corrección de problemas identificados. Los 13 criterios de
-aceptación definidos en el plan de pruebas se cumplieron al 100\%, incluyendo:
+posterior a la corrección de problemas identificados. Se logró cumplir con todos los criterios de aceptación definidos, incluyendo:
 
 \begin{itemize}
 \item Direccionamiento correcto en IPv4 e IPv6
 \item Conectividad plena entre todos los segmentos (L3)
-\item Convergencia de rutas OSPF/OSPFv3
-\item Disponibilidad de servicios desde todas las LANs
+\item Disponibilidad de servicios
 \item Mecanismos de seguridad operativos
 \end{itemize}
 
-La robustez del diseño permitió que los 7 problemas encontrados durante la
-implementación fueran resoluble sin requerimientos de rediseño arquitectónico,
-únicamente ajustes de configuración e correcciones de nivel operativo.
-
-\subsubsection{Escalabilidad}
-
+\item
 El diseño demuestra capacidad de escalabilidad hacia el futuro. El espacio de
 direccionamiento IPv4 tiene reserva suficiente para el crecimiento del 10\%
 previsto y permite agregar una cuarta LAN antes de agotar el rango
@@ -98,4 +60,5 @@ adicionales sin afectar la configuración existente, dado que OSPF propagará
 automáticamente las nuevas rutas.
 
 
+\end{enumerate}
 

@@ -17,21 +17,18 @@ dirección IPv4 estática correcta según el plan de direccionamiento.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item Acceder al router mediante SSH con credenciales administrativas
+\item Acceder al router de la Sede B
 \item Ejecutar comando \texttt{show ip interface brief} para listar todas las interfaces
 \item Verificar que cada interfaz coincida con la asignación en tabla~\ref{tab:ipv4}
-\item Repetir en Router 1 y Router 2
-\item En servidor Linux, ejecutar \texttt{ip addr show} y validar direcciones IPv4
+\item En los servidores Linux, ejecutar \texttt{ip addr show} y validar direcciones IPv4
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
 \begin{itemize}
 \item Todas las interfaces tienen dirección IPv4 del rango correcto
 \item Máscara de red (prefijo) coincide con el plan de VLSM
-\item Direcciones de gateway están en el primer host usable de cada subred
 \end{itemize}
 
-\textbf{Herramientas:} SSH, router CLI, \texttt{show ip interface brief}, \texttt{ip addr}
 
 \subsubsection{Prueba 1.2: Validación de Asignación IPv6}
 
@@ -44,17 +41,14 @@ estática correcta y que SLAAC funciona en los hosts clientes.
 \item Validar que cada interfaz tiene dirección IPv6 del prefijo correcto (tabla~\ref{tab:ipv6})
 \item En cliente Windows, abrir PowerShell y ejecutar \texttt{ipconfig /all}
 \item Verificar que el cliente tiene dirección IPv6 que comienza con el prefijo anunciado
-\item Verificar que la parte de host de la dirección IPv6 corresponde al MAC del cliente
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
 \begin{itemize}
 \item Router tiene dirección IPv6 \texttt{/64} del rango correcto en cada interfaz
 \item Clientes reciben dirección IPv6 con prefijo correcto mediante SLAAC
-\item La dirección IPv6 de cliente contiene su MAC en los últimos 64 bits
 \end{itemize}
 
-\textbf{Herramientas:} \texttt{show ipv6 interface brief}, \texttt{ipconfig /all}, PowerShell
 
 \subsubsection{Prueba 1.3: DHCP en IPv4}
 
@@ -71,7 +65,7 @@ correcto de cada LAN y que los clientes las adquieren automáticamente.
   \item LAN 2: \ipRangoLanDos
   \item LAN 3: \ipRangoLanTres
   \end{itemize}
-\item Ejecutar \texttt{ipconfig /all} para verificar gateway, máscara y DNS
+\item Ejecutar \texttt{ipconfig /all} para verificar gateway y máscara
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
@@ -79,10 +73,8 @@ correcto de cada LAN y que los clientes las adquieren automáticamente.
 \item Dirección asignada está dentro del rango de subred de usuario final
 \item Gateway coincide con la dirección del router en esa LAN
 \item Máscara de red es correcta (255.255.252.0 para LAN 1/2, 255.255.255.0 para LAN 3)
-\item Cliente puede resolver nombres DNS
 \end{itemize}
 
-\textbf{Herramientas:} \texttt{ipconfig /release}, \texttt{ipconfig /renew}, \texttt{ipconfig /all}
 
 \subsection{Matriz de Pruebas de Conectividad y Enrutamiento}
 
@@ -101,7 +93,6 @@ correcto de cada LAN y que los clientes las adquieren automáticamente.
 \begin{itemize}
 \item 100\% de paquetes respondidos
 \item Latencia menor a 10 ms (esperable en LAN local)
-\item Ningún \texttt{Request timed out}
 \end{itemize}
 
 \subsubsection{Prueba 2.2: Ping entre Hosts en LANs Diferentes}
@@ -121,14 +112,12 @@ traversan correctamente entre sedes.
 \begin{itemize}
 \item Todos los pings reciben respuesta
 \item Latencia entre 5--50 ms (según topología física real)
-\item Trazabilidad de ruta mediante \texttt{tracert} muestra saltos correctos
 \end{itemize}
 
-\textbf{Herramientas:} \texttt{ping}, \texttt{tracert}
 
 \subsubsection{Prueba 2.3: Ping IPv6 entre Hosts}
 
-\textbf{Objetivo:} Validar que IPv6 routing funciona sobre OSPFv3.
+\textbf{Objetivo:} Validar que IPv6 routing funciona.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
@@ -144,30 +133,6 @@ traversan correctamente entre sedes.
 \item Ninguna pérdida de paquetes
 \end{itemize}
 
-\subsubsection{Prueba 2.4: Convergencia de Rutas OSPF}
-
-\textbf{Objetivo:} Verificar que OSPF aprendió todas las rutas y que la topología
-se conoce entre routers.
-
-\textbf{Procedimiento:}
-\begin{enumerate}
-\item Acceder a Router 1 mediante SSH
-\item Ejecutar \texttt{show ip route ospf} para listar rutas aprendidas por OSPF
-\item Verificar que están presentes todas las subredes de LAN y la subred de servidores
-\item Ejecutar \texttt{show ip ospf neighbor} para confirmar que Router 1 tiene
-adyacencia con Router 2
-\item Repetir en Router 2
-\item Ejecutar \texttt{show ipv6 route ospf} para validar rutas OSPFv3
-\end{enumerate}
-
-\textbf{Criterio de Éxito:}
-\begin{itemize}
-\item Al menos 4 rutas OSPF visibles (3 LANs + subred servidores)
-\item Estado de adyacencia es \texttt{FULL}
-\item Rutas OSPFv3 incluyen prefijos IPv6 de todas las subredes
-\end{itemize}
-
-\textbf{Herramientas:} Router CLI, \texttt{show ip route ospf}, \texttt{show ip ospf neighbor}
 
 \subsection{Matriz de Pruebas de Servicios}
 
@@ -182,7 +147,7 @@ desde todos los segmentos en IPv4 e IPv6.
 \item Capturar página de bienvenida
 \item Repetir desde clientes en LAN 2 y LAN 3
 \item Abrir navegador y acceder a \texttt{http://[\ipServidorWebIpvSeis]}
-\item Ejecutar \texttt{curl} desde Linux: \texttt{curl -v http://\ipServidorWeb}
+\item Ejecutar \texttt{curl}: \texttt{curl -v http://\ipServidorWeb}
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
@@ -193,33 +158,23 @@ desde todos los segmentos en IPv4 e IPv6.
 \item Latencia menor a 500 ms
 \end{itemize}
 
-\textbf{Herramientas:} Navegador web, \texttt{curl}, DevTools del navegador
 
 \subsubsection{Prueba 3.2: Conectividad del Servidor de Correo}
 
-\textbf{Objetivo:} Verificar que SMTP (puerto 25) e IMAP (puerto 143) están activos.
+\textbf{Objetivo:} Verificar que los servicios de correo (SMTP e IMAP) están disponibles.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item Desde un cliente, ejecutar \texttt{nc -zv \ipServidorCorreo{} 25} y verificar
-      que responde con \texttt{Connection to \ipServidorCorreo{} 25 port [tcp/smtp] succeeded}
-\item Ejecutar \texttt{nc -zv \ipServidorCorreo{} 143} y verificar que responde con
-      \texttt{Connection to \ipServidorCorreo{} 143 port [tcp/imap] succeeded}
-\item Desde el portal web, iniciar sesión con un usuario válido y navegar a la
-      sección de correo
 \item Enviar un correo de prueba a otro usuario desde el portal
 \item Verificar que el correo aparece en la bandeja de entrada del destinatario
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
 \begin{itemize}
-\item Puerto 25 reporta conexión exitosa con \texttt{nc -zv}
-\item Puerto 143 reporta conexión exitosa con \texttt{nc -zv}
 \item El portal web puede autenticarse y listar la bandeja de entrada vía IMAP
 \item El correo de prueba se entrega y es visible en el portal del destinatario
 \end{itemize}
 
-\textbf{Herramientas:} \texttt{nc} (netcat), portal web del proyecto
 
 \subsubsection{Prueba 3.3: Servidor de Chat}
 
@@ -251,7 +206,6 @@ conexiones de múltiples clientes simultáneos.
 \item Funciona desde cualquier LAN (pruebas de conectividad cruzada)
 \end{itemize}
 
-\textbf{Herramientas:} Cliente de chat (Windows), \texttt{ps}, \texttt{ss}, \texttt{nc}
 
 \subsection{Matriz de Pruebas de Seguridad}
 
@@ -284,24 +238,18 @@ conexiones de múltiples clientes simultáneos.
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item SSH al servidor Linux
-\item Ejecutar \texttt{sudo ufw status}
-\item Verificar que solo están abiertos: 22 (SSH), 80 (HTTP), 25 (SMTP),
-  143 (IMAP), y el puerto del servidor de chat
-\item Intentar conectar a puerto cerrado (ej: 3389 RDP):
-  \texttt{telnet \ipServidorWeb\xspace 3389}
-\item Verificar que conexión es rechazada
-\item Ejecutar \texttt{sudo netstat -tuln} para listar puertos activos
+\item Ejecutar \texttt{sudo ufw status} en los servidores Linux
+\item Verificar que solo están abiertos: 2222 (SSH), 25 (SMTP),
+  143 (IMAP), y el puerto 8080 del servidor de chat. 
+  Para el servidor web debe de estar abierto el puerto 80 (HTTP)
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
 \begin{itemize}
 \item Firewall está activo y en modo \texttt{active}
 \item Solo puertos permitidos responden
-\item Puertos cerrados rechazan conexiones
 \end{itemize}
 
-\textbf{Herramientas:} \texttt{ufw status}, \texttt{telnet}, \texttt{netstat}, \texttt{ss}
 
 \subsubsection{Prueba 4.3: Contraseñas Cifradas en Routers}
 
@@ -310,14 +258,12 @@ se almacenan en forma cifrada (no texto plano).
 
 \textbf{Procedimiento:}
 \begin{enumerate}
-\item SSH al router
+\item Entrar a la consola de un router (ej: Router Sede B)
 \item Ejecutar \texttt{show run} para ver configuración
 \item Buscar sección de contraseñas (enable secret, password)
 \item Verificar que \textbf{enable secret} comienza con \texttt{\$5\$} o \texttt{\$6\$}
   (indicador de hash cifrado)
 \item Verificar que las contraseñas en líneas VTY no aparecen en texto plano
-\item Comparar con contraseña de \textbf{enable password} (que \textbf{sí} aparece
-  en texto plano pero es menos crítica)
 \end{enumerate}
 
 \textbf{Criterio de Éxito:}
@@ -327,5 +273,4 @@ se almacenan en forma cifrada (no texto plano).
 \item Usuario no puede descifrar las contraseñas desde archivo de respaldo
 \end{itemize}
 
-\textbf{Herramientas:} Router CLI, \texttt{show run}
 

@@ -8,7 +8,7 @@ ajustar el tamaño de cada subred a la cantidad real de hosts requeridos en cada
 área. Con el crecimiento previsto del 10\% sobre la cantidad de usuarios, LAN 1
 requiere capacidad para 936 hosts, LAN 2 para 660 hosts y LAN 3 para 221 hosts.
 Por esta razón, LAN 1 y LAN 2 se asignaron con prefijo \texttt{/22}, mientras que
-LAN 3 se asignó con prefijo \texttt{/24}, lo que garantiza suficiente espacio
+LAN 3 se asignó con prefijo \texttt{/24}—lo que garantiza suficiente espacio
 para los equipos finales y permite crecimiento adicional dentro de la misma red.
 
 La red de servidores se asignó en una subred independiente de tamaño reducido,
@@ -50,10 +50,6 @@ hosts, por lo que se adoptó una asignación homogénea por segmento.
 La tabla~\ref{tab:ipv6} presenta los prefijos utilizados para cada red y la
 dirección sugerida para la interfaz del router en cada segmento.
 
-Adicionalmente, la tabla~\ref{tab:servicios} describe los servicios de red implementados en la topología, incluyendo los servidores web y de correo, junto con sus direcciones IP, protocolos utilizados y puertos asociados. Esta información permite identificar claramente los recursos disponibles en la red y los mecanismos de comunicación empleados.
-
-Por otra parte, en la tabla~\ref{tab:hosts} se muestra la asignación de direcciones IPv4 e IPv6 en los hosts finales, donde se evidencia la distribución organizada de direcciones dentro de cada subred, así como la configuración de sus respectivas puertas de enlace para garantizar la conectividad entre redes.
-
 \begin{table}[H]
 \centering
 \caption{Plan de direccionamiento IPv6 para el Grupo 1}
@@ -71,39 +67,6 @@ Enlace R1-R2 & 2001:dbe:bef9:ff01::/64 & 2001:dbe:bef9:ff01::1 \\
 \end{tabularx}
 \end{table}
 
-\begin{table}[H]
-\centering
-\caption{Servicios de red y puertos utilizados}
-\label{tab:servicios}
-\begin{tabularx}{\textwidth}{l l l l l}
-\toprule
-Servicio & IPv4 & IPv6 (manual) & Puerto & Tipo \\
-\midrule
-Servidor Web & 172.16.202.6 & 2001:dbe:bef9:10::10 & 80 & HTTP \\
-Servidor Correo (SMTP) & 172.16.202.5 & 2001:dbe:bef9:10::11 & 25 & SMTP \\
-Servidor Correo (POP3) & 172.16.202.5 & 2001:dbe:bef9:10::11 & 110 & POP3 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\begin{table}[H]
-\centering
-\caption{Asignación de direcciones IP en hosts}
-\label{tab:hosts}
-\begin{tabularx}{\textwidth}{l l l l l}
-\toprule
-Dispositivo & Red & IPv4 & IPv6 (manual) & Gateway \\
-\midrule
-PC1-1 & LAN 1 & 172.16.192.253 & 2001:dbe:bef9:1::10 & 172.16.192.1 \\
-PC1-2 & LAN 1 & 172.16.192.254 & 2001:dbe:bef9:1::11 & 172.16.192.1 \\
-PC2-1 & LAN 2 & 172.16.196.253 & 2001:dbe:bef9:2::10 & 172.16.196.1 \\
-PC2-2 & LAN 2 & 172.16.196.254 & 2001:dbe:bef9:2::11 & 172.16.196.1 \\
-PC3-1 & LAN 3 & 172.16.200.253 & 2001:dbe:bef9:3::10 & 172.16.200.1 \\
-PC3-2 & LAN 3 & 172.16.200.254 & 2001:dbe:bef9:3::11 & 172.16.200.1 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
 \subsection{Configuración de los Equipos de Red}
 
 Los routers de la topología se configuran con direccionamiento estático en
@@ -114,15 +77,58 @@ punto definidas anteriormente. Esta organización facilita la administración de
 rutas y permite identificar con claridad el papel de cada interfaz dentro de la
 topología.
 
+A continuación, en la tabla~\ref{tab:routers} se detallan las direcciones IP y máscaras de subred asignadas a cada interfaz de los routers, las cuales actúan como la puerta de enlace predeterminada (Default Gateway) para los hosts de sus respectivas redes locales.
+
+\begin{table}[H]
+\centering
+\caption{Direccionamiento de interfaces en los routers (Gateways)}
+\label{tab:routers}
+\begin{tabularx}{\textwidth}{l l l l l}
+\toprule
+Router & Interfaz & Red & Dirección IPv4 y Máscara & Dirección IPv6 \\
+\midrule
+Sede A & G0/0 & LAN 1 & 172.16.192.1 / 255.255.252.0 & 2001:dbe:bef9:1::1/64 \\
+Sede A & G0/1 & LAN 2 & 172.16.196.1 / 255.255.252.0 & 2001:dbe:bef9:2::1/64 \\
+Sede A & S0/0/0 & WAN & 172.16.202.9 / 255.255.255.252 & 2001:dbe:bef9:ff01::1/64 \\
+\midrule
+Sede B & G0/0 & LAN 3 & 172.16.200.1 / 255.255.255.0 & 2001:dbe:bef9:3::1/64 \\
+Sede B & G0/1 & Servidores & 172.16.202.1 / 255.255.255.248 & 2001:dbe:bef9:10::1/64 \\
+Sede B & S0/0/0 & WAN & 172.16.202.10 / 255.255.255.252 & 2001:dbe:bef9:ff01::2/64 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 En los dispositivos de acceso y conmutación se habilitan contraseñas locales y
-acceso remoto seguro mediante SSHv2. El protocolo Telnet no se utiliza, debido
+acceso remoto seguro mediante SSHv2. El protocolo Telnet no se utiliza debido
 a que transmite credenciales sin cifrado. Adicionalmente, se limita el acceso
 administrativo únicamente a las direcciones internas de la red, de forma que
 la configuración remota solo pueda realizarse desde los segmentos autorizados.
 
+Para la administración de los servicios, se asignan direcciones IP fijas a los servidores dentro de la subred de servicios, garantizando que los clientes puedan localizar los recursos de manera consistente. Para asegurar la conectividad con el resto de la topología, todos los equipos en este segmento se configuran con la máscara de subred \textbf{255.255.255.248} en IPv4 y apuntan a la interfaz G0/1 del Router Sede B como su \textbf{Default Gateway} (\textbf{172.16.202.1} en IPv4 y \textbf{2001:dbe:bef9:10::1} en IPv6). 
+
+La tabla~\ref{tab:servicios} describe detalladamente los servicios de red implementados en la zona de servidores, mapeando sus direcciones lógicas con los puertos y protocolos de transporte utilizados.
+
+\begin{table}[H]
+\centering
+\caption{Servicios de red y puertos utilizados}
+\label{tab:servicios}
+\begin{tabularx}{\textwidth}{l l l l l}
+\toprule
+Servicio & IPv4 & IPv6 (manual) & Puerto & Tipo \\
+\midrule
+Servidor Web & 172.16.202.6 & 2001:dbe:bef9:10::10 & 80 & HTTP \\
+Servidor Correo (SMTP) & 172.16.202.5 & 2001:dbe:bef9:10::11 & 25 & SMTP \\
+Servidor Correo (IMAP) & 172.16.202.5 & 2001:dbe:bef9:10::11 & 143 & IMAP \\
+Servidor de Chat & 172.16.202.5 & 2001:dbe:bef9:10::11 & 8080 & TCP \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Para los hosts finales, se asignan direcciones IPv4 dinámicas mediante DHCP, mientras que en IPv6 se habilita SLAAC para que los clientes autoconfiguren sus direcciones a partir del prefijo anunciado por el router.
+
 \subsection{Configuración de los Servidores y Despliegue Físico}
 
-Aunque el diseño lógico prevé un gran clúster de servidores para atender la demanda total teórica, el despliegue práctico para la validación de esta topología se realiza mediante un esquema distribuido de dos máquinas virtuales (VMs) corriendo Ubuntu 26.04 . Cada máquina virtual fue aprovisionada con 3 núcleos de procesamiento (vCPUs) y 8 GB de memoria RAM, garantizando recursos suficientes para la operación fluida de los servicios en un entorno representativo.
+Aunque el diseño lógico prevé un gran clúster de servidores para atender la demanda total teórica, el despliegue práctico para la validación de esta topología se realiza mediante un esquema distribuido de dos máquinas virtuales (VMs) corriendo Ubuntu 26.04. Cada máquina virtual fue aprovisionada con 3 núcleos de procesamiento (vCPUs) y 8 GB de memoria RAM, garantizando recursos suficientes para la operación fluida de los servicios en un entorno representativo.
 
 Ambos servidores cuentan con direcciones IP fijas dentro de la subred \texttt{172.16.202.0/29} (con equivalentes IPv6 en \texttt{2001:dbe:bef9:10::/64}):
 \begin{itemize}
@@ -191,4 +197,3 @@ Router Sede A & Serial 0/0/0 & Router Sede B (Serial 0/0/0) \\
 \bottomrule
 \end{tabularx}
 \end{table}
-
