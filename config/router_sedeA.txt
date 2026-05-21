@@ -1,0 +1,96 @@
+!==========================================================
+! Router SedeA (1941) - Configuración completa
+! Interfaces: G0/0 → LAN1, G0/1 → LAN2, S0/0/0 → WAN
+!==========================================================
+
+enable
+conf t
+
+hostname SedeA
+
+! --- Seguridad básica ---
+enable secret Class123
+service password-encryption
+banner motd #ACCESO SOLO A PERSONAL AUTORIZADO#
+
+! --- Dominio y usuario para SSHv2 ---
+ip domain-name finalcomu.com
+username admin secret Admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- Consola ---
+line console 0
+ password cisco
+ login
+ exec-timeout 5 0
+ exit
+
+! --- VTY (solo SSH) ---
+line vty 0 4
+ login local
+ transport input ssh
+ exec-timeout 5 0
+ exit
+
+! ─── IPv4 interfaces ───────────────────────────────────
+interface g0/0
+ description LAN1 - 172.16.192.0/22
+ ip address 172.16.192.1 255.255.252.0
+ ip helper-address 172.16.192.1
+ no shutdown
+
+interface g0/1
+ description LAN2 - 172.16.196.0/22
+ ip address 172.16.196.1 255.255.252.0
+ ip helper-address 172.16.196.1
+ no shutdown
+
+interface s0/0/0
+ description Enlace WAN hacia SedeB
+ ip address 172.16.202.9 255.255.255.252
+ no shutdown
+
+! ─── IPv6 interfaces ───────────────────────────────────
+ipv6 unicast-routing
+
+interface g0/0
+ ipv6 address 2001:dbe:bef9:1::1/64
+ ipv6 nd ra interval 30
+ no shutdown
+
+interface g0/1
+ ipv6 address 2001:dbe:bef9:2::1/64
+ ipv6 nd ra interval 30
+ no shutdown
+
+interface s0/0/0
+ ipv6 address 2001:dbe:bef9:ff01::1/64
+ no shutdown
+
+! ─── DHCP IPv4 para LAN1 ───────────────────────────────
+ip dhcp excluded-address 172.16.192.1 172.16.192.10
+ip dhcp pool LAN1
+ network 172.16.192.0 255.255.252.0
+ default-router 172.16.192.1
+ dns-server 8.8.8.8
+ domain-name finalcomu.com
+
+! ─── DHCP IPv4 para LAN2 ───────────────────────────────
+ip dhcp excluded-address 172.16.196.1 172.16.196.10
+ip dhcp pool LAN2
+ network 172.16.196.0 255.255.252.0
+ default-router 172.16.196.1
+ dns-server 8.8.8.8
+ domain-name finalcomu.com
+
+! ─── Rutas estáticas IPv4 ──────────────────────────────
+ip route 172.16.200.0 255.255.255.0 172.16.202.10
+ip route 172.16.202.0 255.255.255.248 172.16.202.10
+
+! ─── Rutas estáticas IPv6 ──────────────────────────────
+ipv6 route 2001:dbe:bef9:3::/64 2001:dbe:bef9:ff01::2
+ipv6 route 2001:dbe:bef9:10::/64 2001:dbe:bef9:ff01::2
+
+end
+write memory

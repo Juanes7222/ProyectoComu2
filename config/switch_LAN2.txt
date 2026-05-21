@@ -1,0 +1,70 @@
+!==========================================================
+! Switch SW-LAN2 (2960-24TT) - Configuración completa
+!==========================================================
+
+enable
+conf t
+
+! --- Configuración necesaria para IPv6
+sdm prefer dual-ipv4-and-ipv6 default
+end
+write memory
+reload
+
+--> Después del reload se reinicia el switch y volvemos a iniciar
+
+enable
+conf t
+
+hostname SW-LAN2
+
+! --- Seguridad básica ---
+enable secret Class123
+service password-encryption
+banner motd #ACCESO RESTRINGIDO#
+
+! --- Dominio y usuario para SSHv2 ---
+ip domain-name finalcomu.com
+username admin secret Admin123
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+! --- Consola ---
+line console 0
+ password cisco
+ login
+ exec-timeout 5 0
+ exit
+
+! --- VTY (solo SSH) ---
+line vty 0 4
+ login local
+ transport input ssh
+ exec-timeout 5 0
+ exit
+
+! ─── IP de gestión (VLAN 1) IPv4 ───────────────────────
+interface vlan 1
+ ip address 172.16.196.2 255.255.252.0
+ no shutdown
+ exit
+
+ip default-gateway 172.16.196.1
+
+! ─── IP de gestión (VLAN 1) IPv6 ───────────────────────
+! NOTA: los switches 2960 en IOS real soportan IPv6 en VLAN SVI.
+! En Packet Tracer puede no estar disponible; omitir si falla.
+interface vlan 1
+ ipv6 address 2001:dbe:bef9:2::2/64
+ no shutdown
+ exit
+
+ipv6 default-gateway 2001:dbe:bef9:2::1
+
+! ─── Apagar puertos no utilizados ──────────────────────
+interface range fa0/3 - 24
+ shutdown
+ exit
+
+end
+write memory
